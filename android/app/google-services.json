@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "118632789771",
+    "project_id": "e-spirit-care",
+    "storage_bucket": "e-spirit-care.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:118632789771:android:a7d2a130c0bccfd4c2d40e",
+        "android_client_info": {
+          "package_name": "com.gloriyan.e_spirit_care"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB9bhPyZYFI-kS5qzMvMMXCQ83yU4EcoRA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
