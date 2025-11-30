@@ -7,31 +7,18 @@ class ChildModel extends Equatable {
   final String username;
   final String password;
   final String umur;
-  final String jenisKelamin;   // 👈 NEW
+  final String jenisKelamin;
   final String pendidikan;
   final String role;
 
-  // 20 Pertanyaan - diubah dari bool ke String
-  final String doaSederhana;
-  final String rutinMurottal;
-  final String dikenalkanShalat;
-  final String ceritaIslami;
-  final String doaPerlindungan;
-  final String pahamSakitUjian;
-  final String hafalSuratPendek;
-  final String tahuRukunIman;
-  final String tahuRukunIslam;
-  final String sopanSantun;
-  final String jujurDalamBerkata;
-  final String menghormatiOrtu;
-  final String berbagiDenganSaudara;
-  final String menjagaKebersihan;
-  final String disiplinWaktu;
-  final String menghafalDoaHarian;
-  final String mengucapSalam;
-  final String membacaBismillah;
-  final String bersyukur;
-  final String sabarMenghadapiMasalah;
+  /// Semua jawaban kuesioner:
+  /// contoh:
+  /// 'pertanyaan1' -> 'Teks jawaban utama'
+  /// 'pertanyaan12' -> 'Tidak yakin'
+  /// 'pertanyaan12_detail' -> 'Karena ...'
+  /// plus:
+  /// 'hifz_an_nafs_score', 'hifz_an_nafs_category', 'hifz_an_nafs_video', dst.
+  final Map<String, String> pertanyaan;
 
   final List<String> harapan;
   final int totalSkor;
@@ -44,28 +31,9 @@ class ChildModel extends Equatable {
     required this.username,
     required this.password,
     required this.umur,
-    required this.jenisKelamin,      // 👈 NEW
+    required this.jenisKelamin,
     required this.pendidikan,
-    required this.doaSederhana,
-    required this.rutinMurottal,
-    required this.dikenalkanShalat,
-    required this.ceritaIslami,
-    required this.doaPerlindungan,
-    required this.pahamSakitUjian,
-    required this.hafalSuratPendek,
-    required this.tahuRukunIman,
-    required this.tahuRukunIslam,
-    required this.sopanSantun,
-    required this.jujurDalamBerkata,
-    required this.menghormatiOrtu,
-    required this.berbagiDenganSaudara,
-    required this.menjagaKebersihan,
-    required this.disiplinWaktu,
-    required this.menghafalDoaHarian,
-    required this.mengucapSalam,
-    required this.membacaBismillah,
-    required this.bersyukur,
-    required this.sabarMenghadapiMasalah,
+    required this.pertanyaan,
     required this.harapan,
     required this.totalSkor,
     required this.kategori,
@@ -79,28 +47,9 @@ class ChildModel extends Equatable {
     String? username,
     String? password,
     String? umur,
-    String? jenisKelamin,     // 👈 NEW
+    String? jenisKelamin,
     String? pendidikan,
-    String? doaSederhana,
-    String? rutinMurottal,
-    String? dikenalkanShalat,
-    String? ceritaIslami,
-    String? doaPerlindungan,
-    String? pahamSakitUjian,
-    String? hafalSuratPendek,
-    String? tahuRukunIman,
-    String? tahuRukunIslam,
-    String? sopanSantun,
-    String? jujurDalamBerkata,
-    String? menghormatiOrtu,
-    String? berbagiDenganSaudara,
-    String? menjagaKebersihan,
-    String? disiplinWaktu,
-    String? menghafalDoaHarian,
-    String? mengucapSalam,
-    String? membacaBismillah,
-    String? bersyukur,
-    String? sabarMenghadapiMasalah,
+    Map<String, String>? pertanyaan,
     List<String>? harapan,
     int? totalSkor,
     String? kategori,
@@ -113,28 +62,9 @@ class ChildModel extends Equatable {
       username: username ?? this.username,
       password: password ?? this.password,
       umur: umur ?? this.umur,
-      jenisKelamin: jenisKelamin ?? this.jenisKelamin,  // 👈 NEW
+      jenisKelamin: jenisKelamin ?? this.jenisKelamin,
       pendidikan: pendidikan ?? this.pendidikan,
-      doaSederhana: doaSederhana ?? this.doaSederhana,
-      rutinMurottal: rutinMurottal ?? this.rutinMurottal,
-      dikenalkanShalat: dikenalkanShalat ?? this.dikenalkanShalat,
-      ceritaIslami: ceritaIslami ?? this.ceritaIslami,
-      doaPerlindungan: doaPerlindungan ?? this.doaPerlindungan,
-      pahamSakitUjian: pahamSakitUjian ?? this.pahamSakitUjian,
-      hafalSuratPendek: hafalSuratPendek ?? this.hafalSuratPendek,
-      tahuRukunIman: tahuRukunIman ?? this.tahuRukunIman,
-      tahuRukunIslam: tahuRukunIslam ?? this.tahuRukunIslam,
-      sopanSantun: sopanSantun ?? this.sopanSantun,
-      jujurDalamBerkata: jujurDalamBerkata ?? this.jujurDalamBerkata,
-      menghormatiOrtu: menghormatiOrtu ?? this.menghormatiOrtu,
-      berbagiDenganSaudara: berbagiDenganSaudara ?? this.berbagiDenganSaudara,
-      menjagaKebersihan: menjagaKebersihan ?? this.menjagaKebersihan,
-      disiplinWaktu: disiplinWaktu ?? this.disiplinWaktu,
-      menghafalDoaHarian: menghafalDoaHarian ?? this.menghafalDoaHarian,
-      mengucapSalam: mengucapSalam ?? this.mengucapSalam,
-      membacaBismillah: membacaBismillah ?? this.membacaBismillah,
-      bersyukur: bersyukur ?? this.bersyukur,
-      sabarMenghadapiMasalah: sabarMenghadapiMasalah ?? this.sabarMenghadapiMasalah,
+      pertanyaan: pertanyaan ?? this.pertanyaan,
       harapan: harapan ?? this.harapan,
       totalSkor: totalSkor ?? this.totalSkor,
       kategori: kategori ?? this.kategori,
@@ -143,40 +73,32 @@ class ChildModel extends Equatable {
   }
 
   factory ChildModel.fromJson(String id, Map<String, dynamic> json) {
+    final rawPertanyaan = json['pertanyaan'];
+    Map<String, String> p = {};
+    if (rawPertanyaan is Map<String, dynamic>) {
+      p = rawPertanyaan.map(
+            (key, value) => MapEntry(key, value?.toString() ?? ''),
+      );
+    }
+
     return ChildModel(
       id: id,
-      parentId: json['parentId'] ?? '',
-      name: json['name'] ?? '',
-      username: json['username'] ?? '',
-      password: json['password'] ?? '',
-      umur: json['umur'] ?? '',
-      jenisKelamin: json['jenisKelamin'] ?? '',   // 👈 NEW
-      pendidikan: json['pendidikan'] ?? '',
-      // 20 pertanyaan
-      doaSederhana: json['doaSederhana'] ?? '',
-      rutinMurottal: json['rutinMurottal'] ?? '',
-      dikenalkanShalat: json['dikenalkanShalat'] ?? '',
-      ceritaIslami: json['ceritaIslami'] ?? '',
-      doaPerlindungan: json['doaPerlindungan'] ?? '',
-      pahamSakitUjian: json['pahamSakitUjian'] ?? '',
-      hafalSuratPendek: json['hafalSuratPendek'] ?? '',
-      tahuRukunIman: json['tahuRukunIman'] ?? '',
-      tahuRukunIslam: json['tahuRukunIslam'] ?? '',
-      sopanSantun: json['sopanSantun'] ?? '',
-      jujurDalamBerkata: json['jujurDalamBerkata'] ?? '',
-      menghormatiOrtu: json['menghormatiOrtu'] ?? '',
-      berbagiDenganSaudara: json['berbagiDenganSaudara'] ?? '',
-      menjagaKebersihan: json['menjagaKebersihan'] ?? '',
-      disiplinWaktu: json['disiplinWaktu'] ?? '',
-      menghafalDoaHarian: json['menghafalDoaHarian'] ?? '',
-      mengucapSalam: json['mengucapSalam'] ?? '',
-      membacaBismillah: json['membacaBismillah'] ?? '',
-      bersyukur: json['bersyukur'] ?? '',
-      sabarMenghadapiMasalah: json['sabarMenghadapiMasalah'] ?? '',
-      harapan: List<String>.from(json['harapan'] ?? []),
-      totalSkor: json['totalSkor'] ?? 0,
-      kategori: json['kategori'] ?? 'Rendah',
-      role: json['role'] ?? 'child',
+      parentId: json['parentId']?.toString() ?? '',
+      name: json['name']?.toString() ?? '',
+      username: json['username']?.toString() ?? '',
+      password: json['password']?.toString() ?? '',
+      umur: json['umur']?.toString() ?? '',
+      jenisKelamin: json['jenisKelamin']?.toString() ?? '',
+      pendidikan: json['pendidikan']?.toString() ?? '',
+      pertanyaan: p,
+      harapan: (json['harapan'] as List<dynamic>? ?? [])
+          .map((e) => e.toString())
+          .toList(),
+      totalSkor: (json['totalSkor'] ?? 0) is int
+          ? json['totalSkor'] as int
+          : int.tryParse(json['totalSkor'].toString()) ?? 0,
+      kategori: json['kategori']?.toString() ?? 'Rendah',
+      role: json['role']?.toString() ?? 'child',
     );
   }
 
@@ -187,29 +109,9 @@ class ChildModel extends Equatable {
       'username': username,
       'password': password,
       'umur': umur,
-      'jenisKelamin': jenisKelamin,    // 👈 NEW
+      'jenisKelamin': jenisKelamin,
       'pendidikan': pendidikan,
-      // 20 pertanyaan
-      'doaSederhana': doaSederhana,
-      'rutinMurottal': rutinMurottal,
-      'dikenalkanShalat': dikenalkanShalat,
-      'ceritaIslami': ceritaIslami,
-      'doaPerlindungan': doaPerlindungan,
-      'pahamSakitUjian': pahamSakitUjian,
-      'hafalSuratPendek': hafalSuratPendek,
-      'tahuRukunIman': tahuRukunIman,
-      'tahuRukunIslam': tahuRukunIslam,
-      'sopanSantun': sopanSantun,
-      'jujurDalamBerkata': jujurDalamBerkata,
-      'menghormatiOrtu': menghormatiOrtu,
-      'berbagiDenganSaudara': berbagiDenganSaudara,
-      'menjagaKebersihan': menjagaKebersihan,
-      'disiplinWaktu': disiplinWaktu,
-      'menghafalDoaHarian': menghafalDoaHarian,
-      'mengucapSalam': mengucapSalam,
-      'membacaBismillah': membacaBismillah,
-      'bersyukur': bersyukur,
-      'sabarMenghadapiMasalah': sabarMenghadapiMasalah,
+      'pertanyaan': pertanyaan,
       'harapan': harapan,
       'totalSkor': totalSkor,
       'kategori': kategori,
@@ -218,57 +120,111 @@ class ChildModel extends Equatable {
     };
   }
 
-  // Method untuk menghitung skor berdasarkan 20 jawaban
+  // =========================
+  // HIFZ getters (dari pertanyaan)
+  // =========================
+
+  int _intFromPertanyaan(String key) {
+    return int.tryParse(pertanyaan[key] ?? '0') ?? 0;
+  }
+
+  String _stringFromPertanyaan(String key, String defaultValue) {
+    return pertanyaan[key] ?? defaultValue;
+  }
+
+  // Hifz An-Nafs
+  int get hifzAnNafsScore => _intFromPertanyaan('hifz_an_nafs_score');
+  String get hifzAnNafsCategory =>
+      _stringFromPertanyaan('hifz_an_nafs_category', 'Aman / risiko minimal');
+  String get hifzAnNafsVideo =>
+      _stringFromPertanyaan('hifz_an_nafs_video', '');
+
+  // Hifz Ad-Diin
+  int get hifzAdDiinScore => _intFromPertanyaan('hifz_ad_diin_score');
+  String get hifzAdDiinCategory =>
+      _stringFromPertanyaan('hifz_ad_diin_category', 'Kesejahteraan Spiritual');
+  String get hifzAdDiinVideo =>
+      _stringFromPertanyaan('hifz_ad_diin_video', '');
+
+  // Hifz Al-Aql
+  int get hifzAlAqlScore => _intFromPertanyaan('hifz_al_aql_score');
+  String get hifzAlAqlCategory =>
+      _stringFromPertanyaan('hifz_al_aql_category', 'Perkembangan baik');
+  String get hifzAlAqlVideo =>
+      _stringFromPertanyaan('hifz_al_aql_video', '');
+
+  // Hifz An-Nasl
+  int get hifzAnNaslScore => _intFromPertanyaan('hifz_an_nasl_score');
+  String get hifzAnNaslCategory =>
+      _stringFromPertanyaan('hifz_an_nasl_category', 'Pola asuh baik');
+  String get hifzAnNaslVideo =>
+      _stringFromPertanyaan('hifz_an_nasl_video', '');
+
+  // Hifz Al-Mal
+  int get hifzAlMalScore => _intFromPertanyaan('hifz_al_mal_score');
+  String get hifzAlMalCategory =>
+      _stringFromPertanyaan('hifz_al_mal_category', 'Kecukupan ekonomi baik');
+  String get hifzAlMalVideo =>
+      _stringFromPertanyaan('hifz_al_mal_video', '');
+
+  /// (Opsional) total skor HIFZ gabungan
+  int get totalHifzScore =>
+      hifzAnNafsScore +
+          hifzAdDiinScore +
+          hifzAlAqlScore +
+          hifzAnNaslScore +
+          hifzAlMalScore;
+
+  /// Hitung skor dari semua jawaban utama (key tanpa suffix `_detail`)
+  /// NOTE: ini generic, tidak pakai logika HIFZ di AddChildPage
   int calculateScore() {
     int score = 0;
 
-    // Mapping 20 jawaban ke skor
-    score += _getScoreForAnswer(doaSederhana);
-    score += _getScoreForAnswer(rutinMurottal);
-    score += _getScoreForAnswer(dikenalkanShalat);
-    score += _getScoreForAnswer(ceritaIslami);
-    score += _getScoreForAnswer(doaPerlindungan);
-    score += _getScoreForAnswer(pahamSakitUjian);
-    score += _getScoreForAnswer(hafalSuratPendek);
-    score += _getScoreForAnswer(tahuRukunIman);
-    score += _getScoreForAnswer(tahuRukunIslam);
-    score += _getScoreForAnswer(sopanSantun);
-    score += _getScoreForAnswer(jujurDalamBerkata);
-    score += _getScoreForAnswer(menghormatiOrtu);
-    score += _getScoreForAnswer(berbagiDenganSaudara);
-    score += _getScoreForAnswer(menjagaKebersihan);
-    score += _getScoreForAnswer(disiplinWaktu);
-    score += _getScoreForAnswer(menghafalDoaHarian);
-    score += _getScoreForAnswer(mengucapSalam);
-    score += _getScoreForAnswer(membacaBismillah);
-    score += _getScoreForAnswer(bersyukur);
-    score += _getScoreForAnswer(sabarMenghadapiMasalah);
+    pertanyaan.forEach((key, value) {
+      if (!key.endsWith('_detail') && !key.startsWith('hifz_')) {
+        score += _getScoreForAnswer(value);
+      }
+    });
 
     return score;
   }
 
   int _getScoreForAnswer(String answer) {
-    switch (answer.toLowerCase()) {
-      case 'ya':
-      case 'rutin':
-      case 'selalu':
-        return 5;
-      case 'kadang':
-      case 'pernah':
-        return 3;
-      case 'tidak':
-      case 'belum':
-      case 'tidak pernah':
-        return 0;
-      default:
-        return 0;
+    final a = answer.toLowerCase().trim();
+
+    // Jawaban sangat positif
+    if (a.startsWith('ya') ||
+        a.contains('yakin') ||
+        a.contains('mengetahui') ||
+        a.contains('tahu') ||
+        a.contains('mandiri') ||
+        a.contains('mampu') ||
+        a.contains('tercukupi') ||
+        a.contains('ketetapan dari allah') ||
+        a.contains('ke pelayanan kesehatan') ||
+        a.contains('jalan allah')) {
+      return 5;
     }
+
+    // Jawaban sedang
+    if (a.contains('kadang') ||
+        a.contains('sebagian') ||
+        a.contains('pernah')) {
+      return 3;
+    }
+
+    // Jawaban negatif
+    if (a.contains('tidak') || a.contains('belum')) {
+      return 0;
+    }
+
+    // default
+    return 0;
   }
 
-  // Method untuk menentukan kategori berdasarkan skor (maksimal 100 poin)
   String determineCategory(int score) {
-    if (score > 80) return 'Tinggi';
-    if (score > 60) return 'Sedang';
+    if (score >= 80) return 'Tinggi';
+    if (score >= 60) return 'Sedang';
     return 'Rendah';
   }
 
@@ -280,30 +236,12 @@ class ChildModel extends Equatable {
     username,
     password,
     umur,
-    jenisKelamin,      // 👈 NEW
+    jenisKelamin,
     pendidikan,
-    doaSederhana,
-    rutinMurottal,
-    dikenalkanShalat,
-    ceritaIslami,
-    doaPerlindungan,
-    pahamSakitUjian,
-    hafalSuratPendek,
-    tahuRukunIman,
-    tahuRukunIslam,
-    sopanSantun,
-    jujurDalamBerkata,
-    menghormatiOrtu,
-    berbagiDenganSaudara,
-    menjagaKebersihan,
-    disiplinWaktu,
-    menghafalDoaHarian,
-    mengucapSalam,
-    membacaBismillah,
-    bersyukur,
-    sabarMenghadapiMasalah,
+    pertanyaan,
     harapan,
     totalSkor,
     kategori,
+    role,
   ];
 }

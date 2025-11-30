@@ -1,5 +1,4 @@
 import 'package:equatable/equatable.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -162,9 +161,9 @@ class AuthCubit extends Cubit<AuthState> {
   Future<void> getCurrentUser(String id) async {
     try {
       debugPrint('[AuthCubit] 🔍 getCurrentUser called for ID: $id');
-      emit(AuthLoading()); // ✅ Emit loading state
+      emit(AuthLoading());
 
-      UserModel user = await UserServices().getUserById(id);
+      final user = await UserServices().getUserById(id);
 
       debugPrint('''
 🎉 [AuthCubit] GET CURRENT USER SUCCESS
@@ -174,9 +173,8 @@ class AuthCubit extends Cubit<AuthState> {
 └── Role: ${user.role}
 ''');
 
-      emit(AuthSuccess(user)); // ✅ PASTIKAN INI DIEMIT!
+      emit(AuthSuccess(user));
       debugPrint('[AuthCubit] 📤 Emitted AuthSuccess from getCurrentUser');
-
     } catch (e) {
       debugPrint('''
 [AuthCubit] ❌ getCurrentUser failed
@@ -184,41 +182,23 @@ class AuthCubit extends Cubit<AuthState> {
 ├── Error Type: ${e.runtimeType}
 ''');
 
-      final firebaseUser = FirebaseAuth.instance.currentUser;
-      if (firebaseUser != null) {
-        debugPrint('[AuthCubit] 🔄 Using fallback user data');
+      // ❗ PENTING: JANGAN fallback ke AuthSuccess di sini
+      emit(AuthFailed(e.toString()));
+    }
+  }
 
-        final email = firebaseUser.email ?? '';
-        final username = email.isNotEmpty
-            ? email.split('@').first
-            : 'User';
-
-        final isAdmin = username.toLowerCase() == 'admin';
-
-        final minimalUser = UserModel(
-          id: firebaseUser.uid,
-          username: username,
-          name: isAdmin ? 'Admin' : 'Orang Tua',
-          umur: '',
-          jenisKelamin: '',        // 👈 NEW
-          statusPerkawinan: '',    // 👈 NEW
-          pendidikan: '',          // 👈 NEW
-          alamat: '',              // 👈 NEW
-          hubunganAnak: '',        // 👈 NEW
-          pekerjaan: '',
-          hp: '',
-          email: email,
-          role: isAdmin ? 'admin' : 'ortu',
-        );
-
-
-        emit(AuthSuccess(minimalUser));
-        debugPrint('[AuthCubit] 📤 Emitted AuthSuccess with fallback data (role: ${minimalUser.role})');
-      } else {
-        debugPrint('[AuthCubit] ❌ No Firebase user available');
-        emit(AuthFailed(e.toString()));
+  Future<void> getCurrentChild(String childUid) async {
+    emit(AuthLoading());
+    try {
+      final child = await _childAuthService.getChildById(childUid);
+      if (child == null) {
+        throw Exception('Data anak tidak ditemukan');
       }
-
+      emit(ChildAuthSuccess(child: child));
+    } catch (e, s) {
+      debugPrint('[AuthCubit] ❌ getCurrentChild failed: $e');
+      debugPrint('[AuthCubit] STACKTRACE: $s');
+      emit(AuthFailed(e.toString()));
     }
   }
 }

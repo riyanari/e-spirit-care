@@ -5,7 +5,7 @@ abstract class ChildState extends Equatable {
   const ChildState();
 
   @override
-  List<Object> get props => [];
+  List<Object?> get props => [];
 }
 
 class ChildInitial extends ChildState {}
@@ -18,7 +18,16 @@ class ChildLoaded extends ChildState {
   const ChildLoaded(this.children);
 
   @override
-  List<Object> get props => [children];
+  List<Object?> get props => [children];
+}
+
+class ChildFailed extends ChildState {
+  final String error;
+
+  const ChildFailed(this.error);
+
+  @override
+  List<Object?> get props => [error];
 }
 
 class ChildAdded extends ChildState {
@@ -28,13 +37,4 @@ class ChildAdded extends ChildState {
 
   @override
   List<Object> get props => [child];
-}
-
-class ChildFailed extends ChildState {
-  final String error;
-
-  const ChildFailed(this.error);
-
-  @override
-  List<Object> get props => [error];
 }

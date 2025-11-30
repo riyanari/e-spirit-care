@@ -23,27 +23,33 @@ class _HomePageState extends State<HomePage> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _checkAuthState();
+      // _checkAuthState();
+      _initParentAndChildren();
     });
   }
 
-  void _checkAuthState() {
-    final authState = context.read<AuthCubit>().state;
+  Future<void> _initParentAndChildren() async {
+    final firebaseUser = FirebaseAuth.instance.currentUser;
 
-    if (authState is AuthSuccess) {
-      _loadChildren(authState.user.id);
-    } else if (authState is AuthLoading) {
-      debugPrint('[HomePage] Auth masih loading, tunggu...');
-    } else {
-      final firebaseUser = FirebaseAuth.instance.currentUser;
-      if (firebaseUser != null) {
-        _loadChildren(firebaseUser.uid);
-      }
+    if (firebaseUser == null) {
+      // Kalau entah kenapa user hilang, balikin ke login
+      debugPrint('[HomePage] currentUser null → ke /login');
+      if (!mounted) return;
+      Navigator.of(context).pushNamedAndRemoveUntil('/login', (_) => false);
+      return;
     }
+
+    debugPrint('[HomePage] currentUser: ${firebaseUser.uid}');
+    _loadChildren(firebaseUser.uid);
   }
 
   void _loadChildren(String userId) {
-    if (parentId == userId) return;
+    debugPrint('[HomePage] _loadChildren dipanggil dengan parentId = $userId');
+
+    if (parentId == userId) {
+      debugPrint('[HomePage] parentId sama, tidak perlu reload');
+      return;
+    }
 
     setState(() {
       parentId = userId;
@@ -52,6 +58,7 @@ class _HomePageState extends State<HomePage> {
 
     context.read<ChildCubit>().loadChildren(parentId!);
   }
+
 
   void _goToAddChild() {
     if (parentId == null) return;
@@ -110,9 +117,8 @@ class _HomePageState extends State<HomePage> {
   Widget build(BuildContext context) {
     return BlocListener<AuthCubit, AuthState>(
       listener: (context, state) {
-        if (state is AuthSuccess && parentId != state.user.id) {
-          _loadChildren(state.user.id);
-        } else if (state is AuthInitial) {
+        if (state is AuthInitial) {
+          // Kalau tiba-tiba balik ke initial (misal setelah logout), arahkan ke login
           Navigator.of(context).pushNamedAndRemoveUntil('/login', (_) => false);
         }
       },

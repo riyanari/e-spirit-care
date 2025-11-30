@@ -54,7 +54,7 @@ class ChildDashboardPage extends StatelessWidget {
               width: 80,
               height: 80,
               decoration: BoxDecoration(
-                color: kPrimaryColor.withValues(alpha:0.1),
+                color: kPrimaryColor.withValues(alpha: 0.1),
                 shape: BoxShape.circle,
               ),
               child: Stack(
@@ -109,17 +109,17 @@ class ChildDashboardPage extends StatelessWidget {
               width: 120,
               height: 120,
               decoration: BoxDecoration(
-                color: Colors.red.withValues(alpha:0.1),
+                color: Colors.red.withValues(alpha: 0.1),
                 shape: BoxShape.circle,
               ),
-              child: Icon(
+              child: const Icon(
                 Icons.error_outline,
                 size: 60,
                 color: Colors.red,
               ),
             ),
             const SizedBox(height: 24),
-            Text(
+            const Text(
               'Oops!',
               style: TextStyle(
                 fontSize: 24,
@@ -145,7 +145,8 @@ class ChildDashboardPage extends StatelessWidget {
               style: ElevatedButton.styleFrom(
                 backgroundColor: kPrimaryColor,
                 foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
+                padding:
+                const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(25),
                 ),
@@ -166,14 +167,31 @@ class _ChildDashboardContent extends StatefulWidget {
   const _ChildDashboardContent({required this.child});
 
   @override
-  State<_ChildDashboardContent> createState() => _ChildDashboardContentState();
+  State<_ChildDashboardContent> createState() =>
+      _ChildDashboardContentState();
 }
 
 class _ChildDashboardContentState extends State<_ChildDashboardContent> {
   final VideoService videoService = VideoService();
+
   late List<VideoModel> recommendations;
+
+  // ===== HIFZ per aspek (SAMA dengan VideoRecommendationsPage) =====
+  late int hifzNafsScore;
+  late int hifzDiinScore;
+  late int hifzAqlScore;
+  late int hifzNaslScore;
+  late int hifzMalScore;
+
+  late String hifzNafsCategory;
+  late String hifzDiinCategory;
+  late String hifzAqlCategory;
+  late String hifzNaslCategory;
+  late String hifzMalCategory;
+
   late int totalScore;
-  late String category;
+  late String overallCategory; // Tinggi / Sedang / Rendah (berdasarkan HIFZ)
+
   bool hasPrayerReminder = false;
   bool reminderScheduled = false;
   List<ScheduledReminder> _scheduledReminders = [];
@@ -183,15 +201,82 @@ class _ChildDashboardContentState extends State<_ChildDashboardContent> {
   void initState() {
     super.initState();
 
+    // ==== ambil data HIFZ dari ChildModel ====
+    hifzNafsScore = widget.child.hifzAnNafsScore;
+    hifzDiinScore = widget.child.hifzAdDiinScore;
+    hifzAqlScore = widget.child.hifzAlAqlScore;
+    hifzNaslScore = widget.child.hifzAnNaslScore;
+    hifzMalScore = widget.child.hifzAlMalScore;
+
+    hifzNafsCategory = widget.child.hifzAnNafsCategory;
+    hifzDiinCategory = widget.child.hifzAdDiinCategory;
+    hifzAqlCategory = widget.child.hifzAlAqlCategory;
+    hifzNaslCategory = widget.child.hifzAnNaslCategory;
+    hifzMalCategory = widget.child.hifzAlMalCategory;
+
+    // total skor gabungan (pakai 5 skor HIFZ, bukan lagi child.totalSkor)
+    totalScore = hifzNafsScore +
+        hifzDiinScore +
+        hifzAqlScore +
+        hifzNaslScore +
+        hifzMalScore;
+
+    // kategori overall dari kombinasi 5 aspek
+    overallCategory = _getOverallCategory();
+
+    // rekomendasi video berdasarkan kategori perkembangan anak (Tinggi/Sedang/Rendah)
+    // ini tetap pakai child.kategori seperti di VideoService
     recommendations = videoService.getVideoRecommendations(widget.child);
-    totalScore = widget.child.totalSkor;
-    category = widget.child.kategori;
+
     hasPrayerReminder = _checkPrayerReminder();
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _setupReminders();
       _loadScheduledReminders();
     });
+  }
+
+  // =========================================================
+  // LOGIC HIFZ / KATEGORI OVERALL (copy dari VideoRecommendationsPage)
+  // =========================================================
+
+  String _getOverallCategory() {
+    final levels = [
+      _aspectLevel(hifzNafsCategory),
+      _aspectLevel(hifzDiinCategory),
+      _aspectLevel(hifzAqlCategory),
+      _aspectLevel(hifzNaslCategory),
+      _aspectLevel(hifzMalCategory),
+    ];
+
+    final avg = levels.reduce((a, b) => a + b) / levels.length;
+
+    if (avg >= 1.5) return 'Tinggi';
+    if (avg >= 0.8) return 'Sedang';
+    return 'Rendah';
+  }
+
+  /// Konversi kategori per HIFZ menjadi level numerik:
+  /// 2 = baik/aman/sejahtera, 1 = risiko, 0 = masalah berat
+  int _aspectLevel(String category) {
+    final text = category.toLowerCase();
+
+    // kondisi baik
+    if (text.contains('aman') ||
+        text.contains('kesejahteraan') ||
+        text.contains('perkembangan baik') ||
+        text.contains('pola asuh baik') ||
+        text.contains('kecukupan ekonomi baik')) {
+      return 2;
+    }
+
+    // risiko sedang
+    if (text.contains('risiko')) {
+      return 1;
+    }
+
+    // kondisi berat (distres, gangguan, buruk, ketidakcukupan berat, dll.)
+    return 0;
   }
 
   bool _checkPrayerReminder() {
@@ -205,6 +290,8 @@ class _ChildDashboardContentState extends State<_ChildDashboardContent> {
       try {
         await ReminderService.initialize();
         await ReminderService.schedulePrayerReminders();
+
+        if (!mounted) return;
 
         setState(() {
           reminderScheduled = true;
@@ -229,14 +316,19 @@ class _ChildDashboardContentState extends State<_ChildDashboardContent> {
       if (!mounted) return;
 
       setState(() {
-        _scheduledReminders = reminders.map((reminder) => ScheduledReminder(
-          id: reminder['id'] as int,
-          title: reminder['title'] as String,
-          body: reminder['body'] as String,
-          type: reminder['type'] as String,
-          scheduledTime: reminder['scheduledTime'] as String,
-        )).toList();
-        reminderScheduled = reminders.isNotEmpty;
+        _scheduledReminders = reminders
+            .map<ScheduledReminder>(
+              (reminder) => ScheduledReminder(
+            id: reminder['id'] as int,
+            title: reminder['title']?.toString() ?? '',
+            body: reminder['body']?.toString() ?? '',
+            type: reminder['type']?.toString() ?? '',
+            scheduledTime: reminder['scheduledTime']?.toString() ?? '',
+          ),
+        )
+            .toList();
+
+        reminderScheduled = _scheduledReminders.isNotEmpty;
       });
     } catch (e) {
       debugPrint('❌ Gagal memuat scheduled reminders: $e');
@@ -254,14 +346,14 @@ class _ChildDashboardContentState extends State<_ChildDashboardContent> {
       SnackBar(
         content: Row(
           children: [
-            Icon(Icons.notifications_active, color: Colors.white),
-            SizedBox(width: 12),
+            const Icon(Icons.notifications_active, color: Colors.white),
+            const SizedBox(width: 12),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Text(
+                  const Text(
                     'Reminder Doa & Sholat Diaktifkan',
                     style: TextStyle(
                       fontWeight: FontWeight.bold,
@@ -271,7 +363,7 @@ class _ChildDashboardContentState extends State<_ChildDashboardContent> {
                   Text(
                     'Untuk ${widget.child.name}',
                     style: TextStyle(
-                      color: Colors.white.withValues(alpha:0.9),
+                      color: Colors.white.withValues(alpha: 0.9),
                       fontSize: 12,
                     ),
                   ),
@@ -281,7 +373,7 @@ class _ChildDashboardContentState extends State<_ChildDashboardContent> {
           ],
         ),
         backgroundColor: Colors.green,
-        duration: Duration(seconds: 4),
+        duration: const Duration(seconds: 4),
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(12),
@@ -299,7 +391,7 @@ class _ChildDashboardContentState extends State<_ChildDashboardContent> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Row(
-          children: [
+          children: const [
             Icon(Icons.error_outline, color: Colors.white),
             SizedBox(width: 12),
             Expanded(
@@ -308,7 +400,7 @@ class _ChildDashboardContentState extends State<_ChildDashboardContent> {
           ],
         ),
         backgroundColor: Colors.red,
-        duration: Duration(seconds: 3),
+        duration: const Duration(seconds: 3),
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(12),
@@ -319,10 +411,11 @@ class _ChildDashboardContentState extends State<_ChildDashboardContent> {
 
   Future<void> _refreshReminders() async {
     await _loadScheduledReminders();
+    if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text('Reminder diperbarui'),
-        duration: Duration(seconds: 1),
+        content: const Text('Reminder diperbarui'),
+        duration: const Duration(seconds: 1),
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(12),
@@ -338,7 +431,7 @@ class _ChildDashboardContentState extends State<_ChildDashboardContent> {
       appBar: AppBar(
         title: Text(
           'Halo, ${widget.child.name}!',
-          style: TextStyle(
+          style: const TextStyle(
             fontWeight: FontWeight.bold,
             fontSize: 20,
           ),
@@ -353,7 +446,7 @@ class _ChildDashboardContentState extends State<_ChildDashboardContent> {
         ),
         actions: [
           _buildAnimatedRefreshButton(),
-          SizedBox(width: 8),
+          const SizedBox(width: 8),
           BlocBuilder<AuthCubit, AuthState>(
             builder: (context, state) {
               if (state is ChildAuthSuccess) {
@@ -362,7 +455,7 @@ class _ChildDashboardContentState extends State<_ChildDashboardContent> {
               return const SizedBox();
             },
           ),
-          SizedBox(width: 8),
+          const SizedBox(width: 8),
         ],
       ),
       body: RefreshIndicator(
@@ -375,19 +468,20 @@ class _ChildDashboardContentState extends State<_ChildDashboardContent> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Header dengan informasi anak
               _buildChildHeader(),
               const SizedBox(height: 24),
 
-              // Card informasi skor dan kategori
-              _buildScoreCard(totalScore, category),
+              // Pakai totalScore & overallCategory hasil perhitungan HIFZ
+              _buildScoreCard(totalScore, overallCategory),
               const SizedBox(height: 24),
 
-              // Section reminder jika ada pengingat doa
+              // LIST HIFZ per aspek (tambahan baru)
+              _buildHifzAspectsCard(),
+              const SizedBox(height: 24),
+
               if (hasPrayerReminder) _buildReminderControlSection(),
-              const SizedBox(height: 24),
+              if (hasPrayerReminder) const SizedBox(height: 24),
 
-              // Video Rekomendasi
               _buildVideoSection(),
               const SizedBox(height: 20),
             ],
@@ -402,7 +496,7 @@ class _ChildDashboardContentState extends State<_ChildDashboardContent> {
       icon: AnimatedSwitcher(
         duration: const Duration(milliseconds: 300),
         child: _isLoadingReminders
-            ? SizedBox(
+            ? const SizedBox(
           width: 20,
           height: 20,
           child: CircularProgressIndicator(
@@ -410,7 +504,7 @@ class _ChildDashboardContentState extends State<_ChildDashboardContent> {
             color: Colors.white,
           ),
         )
-            : Icon(Icons.refresh_rounded),
+            : const Icon(Icons.refresh_rounded),
       ),
       onPressed: _isLoadingReminders ? null : _refreshReminders,
       tooltip: 'Refresh Reminders',
@@ -419,15 +513,15 @@ class _ChildDashboardContentState extends State<_ChildDashboardContent> {
 
   Widget _buildLogoutButton(BuildContext context) {
     return Container(
-      margin: EdgeInsets.only(right: 8),
+      margin: const EdgeInsets.only(right: 8),
       child: IconButton(
         icon: Container(
-          padding: EdgeInsets.all(6),
+          padding: const EdgeInsets.all(6),
           decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha:0.2),
+            color: Colors.white.withValues(alpha: 0.2),
             shape: BoxShape.circle,
           ),
-          child: Icon(Icons.logout, size: 20),
+          child: const Icon(Icons.logout, size: 20),
         ),
         onPressed: () => _showLogoutConfirmation(context),
         tooltip: 'Logout',
@@ -443,14 +537,14 @@ class _ChildDashboardContentState extends State<_ChildDashboardContent> {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            kPrimaryColor.withValues(alpha:0.8),
-            kPrimaryColor.withValues(alpha:0.6),
+            kPrimaryColor.withValues(alpha: 0.8),
+            kPrimaryColor.withValues(alpha: 0.6),
           ],
         ),
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: kPrimaryColor.withValues(alpha:0.3),
+            color: kPrimaryColor.withValues(alpha: 0.3),
             blurRadius: 15,
             offset: const Offset(0, 6),
           ),
@@ -462,11 +556,14 @@ class _ChildDashboardContentState extends State<_ChildDashboardContent> {
             width: 70,
             height: 70,
             decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha:0.2),
+              color: Colors.white.withValues(alpha: 0.2),
               shape: BoxShape.circle,
-              border: Border.all(color: Colors.white.withValues(alpha:0.3), width: 2),
+              border: Border.all(
+                color: Colors.white.withValues(alpha: 0.3),
+                width: 2,
+              ),
             ),
-            child: Icon(
+            child: const Icon(
               Icons.child_care,
               color: Colors.white,
               size: 35,
@@ -489,7 +586,7 @@ class _ChildDashboardContentState extends State<_ChildDashboardContent> {
                 Text(
                   '${widget.child.umur} tahun • ${widget.child.harapan.length} harapan',
                   style: TextStyle(
-                    color: Colors.white.withValues(alpha:0.9),
+                    color: Colors.white.withValues(alpha: 0.9),
                     fontSize: 14,
                   ),
                 ),
@@ -498,15 +595,19 @@ class _ChildDashboardContentState extends State<_ChildDashboardContent> {
                   Row(
                     children: [
                       Container(
-                        padding: EdgeInsets.all(4),
+                        padding: const EdgeInsets.all(4),
                         decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha:0.2),
+                          color: Colors.white.withValues(alpha: 0.2),
                           shape: BoxShape.circle,
                         ),
-                        child: Icon(Icons.notifications_active, size: 12, color: Colors.white),
+                        child: const Icon(
+                          Icons.notifications_active,
+                          size: 12,
+                          color: Colors.white,
+                        ),
                       ),
-                      SizedBox(width: 6),
-                      Text(
+                      const SizedBox(width: 6),
+                      const Text(
                         'Reminder aktif',
                         style: TextStyle(
                           color: Colors.white,
@@ -542,11 +643,11 @@ class _ChildDashboardContentState extends State<_ChildDashboardContent> {
     String getCategoryDescription() {
       switch (category) {
         case 'Tinggi':
-          return 'Perkembangan agama anak sudah baik. Pertahankan! 🎉';
+          return 'Perkembangan aspek HIFZ anak relatif baik. Pertahankan! 🎉';
         case 'Sedang':
-          return 'Perkembangan agama anak cukup baik. Tingkatkan lagi! 💪';
+          return 'Ada beberapa area yang perlu ditingkatkan. Tetap semangat mendampingi anak 💪';
         case 'Rendah':
-          return 'Perlu perhatian lebih untuk pendidikan agama anak. 🌱';
+          return 'Perlu perhatian lebih pada aspek spiritual, jiwa, pola asuh, atau ekonomi. 🌱';
         default:
           return '';
       }
@@ -572,14 +673,14 @@ class _ChildDashboardContentState extends State<_ChildDashboardContent> {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            getCategoryColor().withValues(alpha:0.9),
-            getCategoryColor().withValues(alpha:0.7),
+            getCategoryColor().withValues(alpha: 0.9),
+            getCategoryColor().withValues(alpha: 0.7),
           ],
         ),
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: getCategoryColor().withValues(alpha:0.3),
+            color: getCategoryColor().withValues(alpha: 0.3),
             blurRadius: 15,
             offset: const Offset(0, 6),
           ),
@@ -590,27 +691,31 @@ class _ChildDashboardContentState extends State<_ChildDashboardContent> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              _buildScoreItem('Total Skor', '$totalScore', Icons.assessment_outlined),
+              _buildScoreItem(
+                  'Total Skor', '$totalScore', Icons.assessment_outlined),
               _buildScoreItem('Kategori', category, getCategoryIcon()),
-              _buildScoreItem('Level', _getLevel(category), Icons.star_rate_rounded),
+              _buildScoreItem(
+                  'Level', _getLevel(category), Icons.star_rate_rounded),
             ],
           ),
           const SizedBox(height: 16),
           Container(
             padding: const EdgeInsets.all(14),
             decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha:0.2),
+              color: Colors.white.withValues(alpha: 0.2),
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: Colors.white.withValues(alpha:0.3)),
+              border: Border.all(
+                color: Colors.white.withValues(alpha: 0.3),
+              ),
             ),
             child: Row(
               children: [
-                Icon(
+                const Icon(
                   Icons.tips_and_updates,
                   color: Colors.white,
                   size: 20,
                 ),
-                SizedBox(width: 10),
+                const SizedBox(width: 10),
                 Expanded(
                   child: Text(
                     getCategoryDescription(),
@@ -633,9 +738,9 @@ class _ChildDashboardContentState extends State<_ChildDashboardContent> {
     return Column(
       children: [
         Container(
-          padding: EdgeInsets.all(10),
+          padding: const EdgeInsets.all(10),
           decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha:0.2),
+            color: Colors.white.withValues(alpha: 0.2),
             shape: BoxShape.circle,
           ),
           child: Icon(icon, color: Colors.white, size: 22),
@@ -653,7 +758,7 @@ class _ChildDashboardContentState extends State<_ChildDashboardContent> {
         Text(
           title,
           style: TextStyle(
-            color: Colors.white.withValues(alpha:0.9),
+            color: Colors.white.withValues(alpha: 0.9),
             fontSize: 11,
             fontWeight: FontWeight.w500,
           ),
@@ -675,9 +780,163 @@ class _ChildDashboardContentState extends State<_ChildDashboardContent> {
     }
   }
 
+  // ==========================
+  // CARD RINGKASAN HIFZ (baru)
+  // ==========================
+  Widget _buildHifzAspectsCard() {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(20),
+        color: Colors.white,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withValues(alpha: 0.1),
+            blurRadius: 20,
+            offset: const Offset(0, 10),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Aspek HIFZ',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: Colors.black87,
+            ),
+          ),
+          const SizedBox(height: 16),
+          _buildHifzAspectItem(
+            title: 'Hifz Ad-Diin',
+            subtitle: 'Spiritual & Keagamaan',
+            score: hifzDiinScore,
+            category: hifzDiinCategory,
+            icon: Icons.mosque,
+            color: Colors.green,
+          ),
+          const SizedBox(height: 12),
+          _buildHifzAspectItem(
+            title: 'Hifz An-Nafs',
+            subtitle: 'Jiwa & Keselamatan',
+            score: hifzNafsScore,
+            category: hifzNafsCategory,
+            icon: Icons.health_and_safety,
+            color: Colors.red,
+          ),
+          const SizedBox(height: 12),
+          _buildHifzAspectItem(
+            title: "Hifz Al-'Aql",
+            subtitle: 'Akal & Perkembangan',
+            score: hifzAqlScore,
+            category: hifzAqlCategory,
+            icon: Icons.psychology,
+            color: Colors.purple,
+          ),
+          const SizedBox(height: 12),
+          _buildHifzAspectItem(
+            title: 'Hifz An-Nasl',
+            subtitle: 'Keturunan & Pola Asuh',
+            score: hifzNaslScore,
+            category: hifzNaslCategory,
+            icon: Icons.family_restroom,
+            color: Colors.orange,
+          ),
+          const SizedBox(height: 12),
+          _buildHifzAspectItem(
+            title: 'Hifz Al-Mal',
+            subtitle: 'Ekonomi Keluarga',
+            score: hifzMalScore,
+            category: hifzMalCategory,
+            icon: Icons.savings,
+            color: Colors.blue,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildHifzAspectItem({
+    required String title,
+    required String subtitle,
+    required int score,
+    required String category,
+    required IconData icon,
+    required Color color,
+  }) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.05),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: color.withValues(alpha: 0.1)),
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: color.withValues(alpha: 0.1),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(icon, color: color, size: 20),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w600,
+                    fontSize: 14,
+                  ),
+                ),
+                Text(
+                  subtitle,
+                  style: TextStyle(
+                    color: Colors.grey.shade600,
+                    fontSize: 12,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Text(
+                '$score',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: color,
+                ),
+              ),
+              Text(
+                category,
+                style: TextStyle(
+                  color: Colors.grey.shade600,
+                  fontSize: 11,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ==========================
+  // REMINDER SECTION
+  // ==========================
+
   Widget _buildReminderControlSection() {
     return AnimatedContainer(
-      duration: Duration(milliseconds: 500),
+      duration: const Duration(milliseconds: 500),
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         gradient: LinearGradient(
@@ -689,12 +948,14 @@ class _ChildDashboardContentState extends State<_ChildDashboardContent> {
         ),
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: reminderScheduled ? Colors.green.shade100 : Colors.blue.shade100,
+          color:
+          reminderScheduled ? Colors.green.shade100 : Colors.blue.shade100,
           width: 2,
         ),
         boxShadow: [
           BoxShadow(
-            color: (reminderScheduled ? Colors.green : Colors.blue).withValues(alpha:0.1),
+            color: (reminderScheduled ? Colors.green : Colors.blue)
+                .withValues(alpha: 0.1),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -706,36 +967,44 @@ class _ChildDashboardContentState extends State<_ChildDashboardContent> {
           Row(
             children: [
               AnimatedContainer(
-                duration: Duration(milliseconds: 500),
-                padding: EdgeInsets.all(8),
+                duration: const Duration(milliseconds: 500),
+                padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: reminderScheduled ? Colors.green : Colors.blue.shade700,
+                  color: reminderScheduled
+                      ? Colors.green
+                      : Colors.blue.shade700,
                   shape: BoxShape.circle,
                 ),
-                child: Icon(
+                child: const Icon(
                   Icons.notifications_active,
                   color: Colors.white,
                   size: 20,
                 ),
               ),
-              SizedBox(width: 12),
+              const SizedBox(width: 12),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      reminderScheduled ? 'Reminder Aktif 🎯' : 'Mengaktifkan Reminder...',
+                      reminderScheduled
+                          ? 'Reminder Aktif 🎯'
+                          : 'Mengaktifkan Reminder...',
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
-                        color: reminderScheduled ? Colors.green.shade800 : Colors.blue.shade800,
+                        color: reminderScheduled
+                            ? Colors.green.shade800
+                            : Colors.blue.shade800,
                       ),
                     ),
-                    SizedBox(height: 2),
+                    const SizedBox(height: 2),
                     Text(
                       'Berdasarkan harapan "Pengingat Doa"',
                       style: TextStyle(
-                        color: reminderScheduled ? Colors.green.shade600 : Colors.blue.shade600,
+                        color: reminderScheduled
+                            ? Colors.green.shade600
+                            : Colors.blue.shade600,
                         fontSize: 12,
                       ),
                     ),
@@ -743,7 +1012,7 @@ class _ChildDashboardContentState extends State<_ChildDashboardContent> {
                 ),
               ),
               if (!reminderScheduled) ...[
-                SizedBox(width: 8),
+                const SizedBox(width: 8),
                 SizedBox(
                   width: 20,
                   height: 20,
@@ -755,7 +1024,7 @@ class _ChildDashboardContentState extends State<_ChildDashboardContent> {
               ],
             ],
           ),
-          SizedBox(height: 16),
+          const SizedBox(height: 16),
           Wrap(
             spacing: 10,
             runSpacing: 8,
@@ -766,18 +1035,20 @@ class _ChildDashboardContentState extends State<_ChildDashboardContent> {
               _buildReminderChip('Baca Quran', Icons.menu_book, Colors.blue),
             ],
           ),
-          SizedBox(height: 16),
+          const SizedBox(height: 16),
           Row(
             children: [
               Expanded(
                 child: ElevatedButton.icon(
-                  onPressed: reminderScheduled ? () => _viewReminderSchedule() : null,
-                  icon: Icon(Icons.schedule, size: 18),
-                  label: Text('Lihat Jadwal'),
+                  onPressed:
+                  reminderScheduled ? () => _viewReminderSchedule() : null,
+                  icon: const Icon(Icons.schedule, size: 18),
+                  label: const Text('Lihat Jadwal'),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: reminderScheduled ? Colors.green : Colors.blue.shade700,
+                    backgroundColor:
+                    reminderScheduled ? Colors.green : Colors.blue.shade700,
                     foregroundColor: Colors.white,
-                    padding: EdgeInsets.symmetric(vertical: 12),
+                    padding: const EdgeInsets.symmetric(vertical: 12),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
@@ -785,7 +1056,7 @@ class _ChildDashboardContentState extends State<_ChildDashboardContent> {
                   ),
                 ),
               ),
-              SizedBox(width: 12),
+              const SizedBox(width: 12),
               Container(
                 width: 45,
                 height: 45,
@@ -795,7 +1066,7 @@ class _ChildDashboardContentState extends State<_ChildDashboardContent> {
                   border: Border.all(color: Colors.grey.shade300),
                 ),
                 child: IconButton(
-                  icon: Icon(Icons.info_outline, size: 20),
+                  icon: const Icon(Icons.info_outline, size: 20),
                   onPressed: () => _showReminderInfo(),
                   color: Colors.grey.shade600,
                 ),
@@ -811,19 +1082,22 @@ class _ChildDashboardContentState extends State<_ChildDashboardContent> {
     return Chip(
       label: Text(
         text,
-        style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
+        style: const TextStyle(
+          fontSize: 12,
+          fontWeight: FontWeight.w500,
+        ),
       ),
       avatar: Container(
         width: 20,
         height: 20,
         decoration: BoxDecoration(
-          color: color.withValues(alpha:0.2),
+          color: color.withValues(alpha: 0.2),
           shape: BoxShape.circle,
         ),
         child: Icon(icon, size: 12, color: color),
       ),
-      backgroundColor: color.withValues(alpha:0.1),
-      side: BorderSide(color: color.withValues(alpha:0.3)),
+      backgroundColor: color.withValues(alpha: 0.1),
+      side: BorderSide(color: color.withValues(alpha: 0.3)),
       visualDensity: VisualDensity.compact,
       materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
     );
@@ -837,7 +1111,7 @@ class _ChildDashboardContentState extends State<_ChildDashboardContent> {
           borderRadius: BorderRadius.circular(20),
         ),
         child: Container(
-          padding: EdgeInsets.all(24),
+          padding: const EdgeInsets.all(24),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(20),
             gradient: LinearGradient(
@@ -853,14 +1127,15 @@ class _ChildDashboardContentState extends State<_ChildDashboardContent> {
               Row(
                 children: [
                   Container(
-                    padding: EdgeInsets.all(8),
-                    decoration: BoxDecoration(
+                    padding: const EdgeInsets.all(8),
+                    decoration: const BoxDecoration(
                       color: Colors.blue,
                       shape: BoxShape.circle,
                     ),
-                    child: Icon(Icons.info, color: Colors.white, size: 24),
+                    child: const Icon(Icons.info,
+                        color: Colors.white, size: 24),
                   ),
-                  SizedBox(width: 12),
+                  const SizedBox(width: 12),
                   Text(
                     'Tentang Reminder',
                     style: TextStyle(
@@ -871,7 +1146,7 @@ class _ChildDashboardContentState extends State<_ChildDashboardContent> {
                   ),
                 ],
               ),
-              SizedBox(height: 16),
+              const SizedBox(height: 16),
               Text(
                 'Reminder doa dan sholat diaktifkan secara otomatis berdasarkan harapan yang tercatat untuk ${widget.child.name}.',
                 style: TextStyle(
@@ -879,11 +1154,11 @@ class _ChildDashboardContentState extends State<_ChildDashboardContent> {
                   fontSize: 14,
                 ),
               ),
-              SizedBox(height: 12),
+              const SizedBox(height: 12),
               _buildInfoItem('⏰', 'Jadwal otomatis sesuai waktu sholat'),
               _buildInfoItem('🔔', 'Notifikasi akan muncul tepat waktu'),
               _buildInfoItem('📱', 'Dapat diatur ulang di pengaturan'),
-              SizedBox(height: 20),
+              const SizedBox(height: 20),
               Align(
                 alignment: Alignment.centerRight,
                 child: TextButton(
@@ -910,8 +1185,8 @@ class _ChildDashboardContentState extends State<_ChildDashboardContent> {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(emoji, style: TextStyle(fontSize: 16)),
-          SizedBox(width: 12),
+          Text(emoji, style: const TextStyle(fontSize: 16)),
+          const SizedBox(width: 12),
           Expanded(
             child: Text(
               text,
@@ -933,7 +1208,7 @@ class _ChildDashboardContentState extends State<_ChildDashboardContent> {
       backgroundColor: Colors.transparent,
       builder: (context) => Container(
         height: MediaQuery.of(context).size.height * 0.8,
-        decoration: BoxDecoration(
+        decoration: const BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.vertical(
             top: Radius.circular(25),
@@ -942,17 +1217,17 @@ class _ChildDashboardContentState extends State<_ChildDashboardContent> {
         child: Column(
           children: [
             Container(
-              padding: EdgeInsets.all(20),
+              padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
                 color: Colors.blue.shade50,
-                borderRadius: BorderRadius.vertical(
+                borderRadius: const BorderRadius.vertical(
                   top: Radius.circular(25),
                 ),
               ),
               child: Row(
                 children: [
-                  Icon(Icons.schedule, color: Colors.blue, size: 28),
-                  SizedBox(width: 12),
+                  const Icon(Icons.schedule, color: Colors.blue, size: 28),
+                  const SizedBox(width: 12),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -976,7 +1251,8 @@ class _ChildDashboardContentState extends State<_ChildDashboardContent> {
                     ),
                   ),
                   IconButton(
-                    icon: Icon(Icons.close, color: Colors.blue.shade600),
+                    icon:
+                    Icon(Icons.close, color: Colors.blue.shade600),
                     onPressed: () => Navigator.pop(context),
                   ),
                 ],
@@ -984,24 +1260,32 @@ class _ChildDashboardContentState extends State<_ChildDashboardContent> {
             ),
             Expanded(
               child: ListView(
-                padding: EdgeInsets.all(16),
+                padding: const EdgeInsets.all(16),
                 children: [
                   _buildScheduleCategory('🕌 Waktu Sholat', [
-                    _buildScheduleItem('05:30', 'Subuh', Icons.mosque, Colors.green),
-                    _buildScheduleItem('12:00', 'Dzuhur', Icons.mosque, Colors.green),
-                    _buildScheduleItem('15:30', 'Ashar', Icons.mosque, Colors.green),
-                    _buildScheduleItem('18:00', 'Maghrib', Icons.mosque, Colors.green),
-                    _buildScheduleItem('19:30', 'Isya', Icons.mosque, Colors.green),
+                    _buildScheduleItem(
+                        '05:30', 'Subuh', Icons.mosque, Colors.green),
+                    _buildScheduleItem(
+                        '12:00', 'Dzuhur', Icons.mosque, Colors.green),
+                    _buildScheduleItem(
+                        '15:30', 'Ashar', Icons.mosque, Colors.green),
+                    _buildScheduleItem(
+                        '18:00', 'Maghrib', Icons.mosque, Colors.green),
+                    _buildScheduleItem(
+                        '19:30', 'Isya', Icons.mosque, Colors.green),
                   ]),
-                  SizedBox(height: 20),
+                  const SizedBox(height: 20),
                   _buildScheduleCategory('🙏 Waktu Doa', [
-                    _buildScheduleItem('07:00', 'Doa Pagi', Icons.wb_sunny, Colors.orange),
-                    _buildScheduleItem('18:30', 'Doa Sore', Icons.nightlight, Colors.purple),
-                    _buildScheduleItem('21:00', 'Doa Tidur', Icons.bedtime, Colors.blue),
+                    _buildScheduleItem(
+                        '07:00', 'Doa Pagi', Icons.wb_sunny, Colors.orange),
+                    _buildScheduleItem(
+                        '18:30', 'Doa Sore', Icons.nightlight, Colors.purple),
+                    _buildScheduleItem(
+                        '21:00', 'Doa Tidur', Icons.bedtime, Colors.blue),
                   ]),
-                  SizedBox(height: 20),
+                  const SizedBox(height: 20),
                   Container(
-                    padding: EdgeInsets.all(16),
+                    padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
                       color: Colors.green.shade50,
                       borderRadius: BorderRadius.circular(12),
@@ -1009,8 +1293,9 @@ class _ChildDashboardContentState extends State<_ChildDashboardContent> {
                     ),
                     child: Row(
                       children: [
-                        Icon(Icons.celebration, color: Colors.green, size: 24),
-                        SizedBox(width: 12),
+                        const Icon(Icons.celebration,
+                            color: Colors.green, size: 24),
+                        const SizedBox(width: 12),
                         Expanded(
                           child: Text(
                             'Reminder aktif! ${widget.child.name} akan mendapatkan notifikasi sesuai jadwal di atas.',
@@ -1044,16 +1329,17 @@ class _ChildDashboardContentState extends State<_ChildDashboardContent> {
             color: Colors.grey.shade700,
           ),
         ),
-        SizedBox(height: 12),
+        const SizedBox(height: 12),
         ...items,
       ],
     );
   }
 
-  Widget _buildScheduleItem(String time, String activity, IconData icon, Color color) {
+  Widget _buildScheduleItem(
+      String time, String activity, IconData icon, Color color) {
     return Container(
-      margin: EdgeInsets.only(bottom: 10),
-      padding: EdgeInsets.all(16),
+      margin: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.grey.shade50,
         borderRadius: BorderRadius.circular(12),
@@ -1063,9 +1349,10 @@ class _ChildDashboardContentState extends State<_ChildDashboardContent> {
         children: [
           Container(
             width: 50,
-            padding: EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+            padding:
+            const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
             decoration: BoxDecoration(
-              color: color.withValues(alpha:0.1),
+              color: color.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Text(
@@ -1078,16 +1365,16 @@ class _ChildDashboardContentState extends State<_ChildDashboardContent> {
               textAlign: TextAlign.center,
             ),
           ),
-          SizedBox(width: 16),
+          const SizedBox(width: 16),
           Container(
-            padding: EdgeInsets.all(8),
+            padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: color.withValues(alpha:0.1),
+              color: color.withValues(alpha: 0.1),
               shape: BoxShape.circle,
             ),
             child: Icon(icon, color: color, size: 18),
           ),
-          SizedBox(width: 12),
+          const SizedBox(width: 12),
           Expanded(
             child: Text(
               activity,
@@ -1098,9 +1385,10 @@ class _ChildDashboardContentState extends State<_ChildDashboardContent> {
             ),
           ),
           Container(
-            padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            padding:
+            const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
             decoration: BoxDecoration(
-              color: color.withValues(alpha:0.1),
+              color: color.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(6),
             ),
             child: Text(
@@ -1117,12 +1405,16 @@ class _ChildDashboardContentState extends State<_ChildDashboardContent> {
     );
   }
 
+  // ==========================
+  // VIDEO SECTION
+  // ==========================
   Widget _buildVideoSection() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          mainAxisAlignment:
+          MainAxisAlignment.spaceBetween,
           children: [
             Text(
               'Video Rekomendasi',
@@ -1133,9 +1425,10 @@ class _ChildDashboardContentState extends State<_ChildDashboardContent> {
               ),
             ),
             Container(
-              padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              padding: const EdgeInsets.symmetric(
+                  horizontal: 12, vertical: 6),
               decoration: BoxDecoration(
-                color: kPrimaryColor.withValues(alpha:0.1),
+                color: kPrimaryColor.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Text(
@@ -1149,7 +1442,7 @@ class _ChildDashboardContentState extends State<_ChildDashboardContent> {
             ),
           ],
         ),
-        SizedBox(height: 8),
+        const SizedBox(height: 8),
         Text(
           'Konten edukasi berdasarkan perkembangan ${widget.child.name}',
           style: TextStyle(
@@ -1157,13 +1450,14 @@ class _ChildDashboardContentState extends State<_ChildDashboardContent> {
             fontSize: 14,
           ),
         ),
-        SizedBox(height: 20),
+        const SizedBox(height: 20),
         recommendations.isEmpty
             ? _buildEmptyVideos()
             : GridView.builder(
           shrinkWrap: true,
-          physics: NeverScrollableScrollPhysics(),
-          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+          physics: const NeverScrollableScrollPhysics(),
+          gridDelegate:
+          const SliverGridDelegateWithFixedCrossAxisCount(
             crossAxisCount: 2,
             crossAxisSpacing: 16,
             mainAxisSpacing: 16,
@@ -1182,7 +1476,6 @@ class _ChildDashboardContentState extends State<_ChildDashboardContent> {
   Widget _buildVideoCard(VideoModel video, BuildContext context) {
     return GestureDetector(
       onTap: () {
-        // Navigate ke VideoPlayerPage, bukan VideoRecommendationsPage
         Navigator.push(
           context,
           MaterialPageRoute(
@@ -1196,20 +1489,22 @@ class _ChildDashboardContentState extends State<_ChildDashboardContent> {
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
-              color: Colors.grey.withValues(alpha:0.1),
+              color: Colors.grey.withValues(alpha: 0.1),
               blurRadius: 10,
-              offset: Offset(0, 4),
+              offset: const Offset(0, 4),
             ),
           ],
         ),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
+          crossAxisAlignment:
+          CrossAxisAlignment.stretch,
           children: [
-            // YouTube Thumbnail
+            // Thumbnail YouTube
             Expanded(
               child: Container(
                 decoration: BoxDecoration(
-                  borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+                  borderRadius: const BorderRadius.vertical(
+                      top: Radius.circular(16)),
                   image: video.effectiveThumbnail.isNotEmpty
                       ? DecorationImage(
                     image: NetworkImage(video.effectiveThumbnail),
@@ -1217,21 +1512,20 @@ class _ChildDashboardContentState extends State<_ChildDashboardContent> {
                   )
                       : null,
                   color: video.effectiveThumbnail.isEmpty
-                      ? kPrimaryColor.withValues(alpha:0.1)
+                      ? kPrimaryColor.withValues(alpha: 0.1)
                       : null,
                 ),
                 child: Stack(
                   children: [
-                    // Play button overlay
                     if (video.effectiveThumbnail.isNotEmpty)
                       Container(
-                        color: Colors.black.withValues(alpha:0.3),
+                        color: Colors.black.withValues(alpha: 0.3),
                         child: Center(
                           child: Container(
                             width: 50,
                             height: 50,
                             decoration: BoxDecoration(
-                              color: Colors.white.withValues(alpha:0.9),
+                              color: Colors.white.withValues(alpha: 0.9),
                               shape: BoxShape.circle,
                             ),
                             child: Icon(
@@ -1242,15 +1536,14 @@ class _ChildDashboardContentState extends State<_ChildDashboardContent> {
                           ),
                         ),
                       ),
-
-                    // Duration badge
                     Positioned(
                       top: 8,
                       right: 8,
                       child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 6, vertical: 2),
                         decoration: BoxDecoration(
-                          color: Colors.black.withValues(alpha:0.7),
+                          color: Colors.black.withValues(alpha: 0.7),
                           borderRadius: BorderRadius.circular(4),
                         ),
                         child: Text(
@@ -1263,12 +1556,11 @@ class _ChildDashboardContentState extends State<_ChildDashboardContent> {
                         ),
                       ),
                     ),
-
-                    // Fallback jika tidak ada thumbnail
                     if (video.effectiveThumbnail.isEmpty)
                       Center(
                         child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
+                          mainAxisAlignment:
+                          MainAxisAlignment.center,
                           children: [
                             Icon(
                               Icons.play_circle_filled,
@@ -1291,19 +1583,19 @@ class _ChildDashboardContentState extends State<_ChildDashboardContent> {
                 ),
               ),
             ),
-
-            // Video Info
+            // Info video
             Padding(
               padding: const EdgeInsets.all(12),
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+                crossAxisAlignment:
+                CrossAxisAlignment.start,
                 children: [
                   Text(
                     video.title,
                     style: const TextStyle(
                       fontWeight: FontWeight.w600,
                       fontSize: 13,
-                      color: Colors.grey,
+                      color: Colors.black87,
                     ),
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
@@ -1312,9 +1604,9 @@ class _ChildDashboardContentState extends State<_ChildDashboardContent> {
                   Row(
                     children: [
                       Icon(
-                          Icons.category_outlined,
-                          size: 12,
-                          color: Colors.grey.shade500
+                        Icons.category_outlined,
+                        size: 12,
+                        color: Colors.grey.shade500,
                       ),
                       const SizedBox(width: 4),
                       Text(
@@ -1325,13 +1617,13 @@ class _ChildDashboardContentState extends State<_ChildDashboardContent> {
                         ),
                       ),
                       const Spacer(),
-                      Icon(
+                      const Icon(
                         Icons.play_circle_outline,
                         size: 12,
                         color: kPrimaryColor,
                       ),
                       const SizedBox(width: 4),
-                      Text(
+                      const Text(
                         'Putar',
                         style: TextStyle(
                           color: kPrimaryColor,
@@ -1368,7 +1660,11 @@ class _ChildDashboardContentState extends State<_ChildDashboardContent> {
               color: Colors.grey.shade200,
               shape: BoxShape.circle,
             ),
-            child: Icon(Icons.video_library, size: 40, color: Colors.grey.shade400),
+            child: Icon(
+              Icons.video_library,
+              size: 40,
+              color: Colors.grey.shade400,
+            ),
           ),
           const SizedBox(height: 16),
           Text(
@@ -1391,10 +1687,10 @@ class _ChildDashboardContentState extends State<_ChildDashboardContent> {
           const SizedBox(height: 16),
           ElevatedButton.icon(
             onPressed: () {
-              // Aksi untuk mencari video
+              // TODO: aksi jika ingin cari video lain
             },
-            icon: Icon(Icons.search, size: 16),
-            label: Text('Cari Video Lainnya'),
+            icon: const Icon(Icons.search, size: 16),
+            label: const Text('Cari Video Lainnya'),
             style: ElevatedButton.styleFrom(
               backgroundColor: kPrimaryColor,
               foregroundColor: Colors.white,
@@ -1416,7 +1712,7 @@ class _ChildDashboardContentState extends State<_ChildDashboardContent> {
           borderRadius: BorderRadius.circular(20),
         ),
         child: Container(
-          padding: EdgeInsets.all(24),
+          padding: const EdgeInsets.all(24),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(20),
             color: Colors.white,
@@ -1428,16 +1724,16 @@ class _ChildDashboardContentState extends State<_ChildDashboardContent> {
                 width: 60,
                 height: 60,
                 decoration: BoxDecoration(
-                  color: Colors.red.withValues(alpha:0.1),
+                  color: Colors.red.withValues(alpha: 0.1),
                   shape: BoxShape.circle,
                 ),
-                child: Icon(
+                child: const Icon(
                   Icons.logout,
                   color: Colors.red,
                   size: 30,
                 ),
               ),
-              SizedBox(height: 16),
+              const SizedBox(height: 16),
               Text(
                 'Logout?',
                 style: TextStyle(
@@ -1446,7 +1742,7 @@ class _ChildDashboardContentState extends State<_ChildDashboardContent> {
                   color: Colors.grey.shade800,
                 ),
               ),
-              SizedBox(height: 8),
+              const SizedBox(height: 8),
               Text(
                 'Apakah kamu yakin ingin logout dari akun ${widget.child.name}?',
                 textAlign: TextAlign.center,
@@ -1455,7 +1751,7 @@ class _ChildDashboardContentState extends State<_ChildDashboardContent> {
                   fontSize: 14,
                 ),
               ),
-              SizedBox(height: 24),
+              const SizedBox(height: 24),
               Row(
                 children: [
                   Expanded(
@@ -1463,34 +1759,39 @@ class _ChildDashboardContentState extends State<_ChildDashboardContent> {
                       onPressed: () => Navigator.pop(context),
                       style: OutlinedButton.styleFrom(
                         foregroundColor: Colors.grey.shade600,
-                        padding: EdgeInsets.symmetric(vertical: 12),
+                        padding:
+                        const EdgeInsets.symmetric(vertical: 12),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
                         ),
-                        side: BorderSide(color: Colors.grey.shade300),
+                        side:
+                        BorderSide(color: Colors.grey.shade300),
                       ),
-                      child: Text('Batal'),
+                      child: const Text('Batal'),
                     ),
                   ),
-                  SizedBox(width: 12),
+                  const SizedBox(width: 12),
                   Expanded(
                     child: ElevatedButton(
                       onPressed: () async {
                         Navigator.pop(context);
                         await ReminderService.cancelAllReminders();
+                        if (!mounted) return;
                         context.read<AuthCubit>().signOut();
                         Navigator.of(context)
-                            .pushNamedAndRemoveUntil('/login', (_) => false);
+                            .pushNamedAndRemoveUntil(
+                            '/login', (_) => false);
                       },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.red,
                         foregroundColor: Colors.white,
-                        padding: EdgeInsets.symmetric(vertical: 12),
+                        padding:
+                        const EdgeInsets.symmetric(vertical: 12),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
                         ),
                       ),
-                      child: Text('Logout'),
+                      child: const Text('Logout'),
                     ),
                   ),
                 ],
