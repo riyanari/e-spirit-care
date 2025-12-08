@@ -1460,7 +1460,7 @@ class _AddChildPageState extends State<AddChildPage> {
       _QuestionConfig(
         id: 'pertanyaan2',
         pageIndex: 1,
-        question: 'B. Riwayat kesehatan sekarang:',
+        question: 'B. Sakit yang dirasakan sekarang:',
         type: QuestionType.text,
         icon: Icons.history,
         iconColor: Colors.orange.shade100,
@@ -1468,7 +1468,7 @@ class _AddChildPageState extends State<AddChildPage> {
       _QuestionConfig(
         id: 'pertanyaan3',
         pageIndex: 1,
-        question: 'C. Riwayat kesehatan dahulu:',
+        question: 'C. Sakit yang pernah di derita sebelumnya:',
         type: QuestionType.text,
         icon: Icons.history_toggle_off,
         iconColor: Colors.deepOrange.shade100,
@@ -1476,7 +1476,7 @@ class _AddChildPageState extends State<AddChildPage> {
       _QuestionConfig(
         id: 'pertanyaan4',
         pageIndex: 1,
-        question: 'D. Riwayat penggunaan obat:',
+        question: 'D. Sebutkan obat apa saja yang pernah dikonsumsi oleh anak (jika ada):',
         type: QuestionType.text,
         icon: Icons.medication,
         iconColor: Colors.blue.shade100,
@@ -1508,7 +1508,7 @@ class _AddChildPageState extends State<AddChildPage> {
       _QuestionConfig(
         id: 'pertanyaan7',
         pageIndex: 1,
-        question: 'G1. Berapa kali anak makan dalam sehari?',
+        question: 'G1. Berapa kali anak makan dalam sehari saat sekarang (sakit)?',
         type: QuestionType.text,
         icon: Icons.fastfood,
         iconColor: Colors.amber.shade100,
@@ -1516,7 +1516,7 @@ class _AddChildPageState extends State<AddChildPage> {
       _QuestionConfig(
         id: 'pertanyaan8',
         pageIndex: 1,
-        question: 'G2. Apa saja jenis makanan yang diberikan anak sehari-hari?',
+        question: 'G2. Apa saja jenis makanan yang diberikan anak sehari-hari saat sekarang (sakit)?',
         type: QuestionType.text,
         icon: Icons.lunch_dining,
         iconColor: Colors.amber.shade100,
@@ -1525,7 +1525,7 @@ class _AddChildPageState extends State<AddChildPage> {
         id: 'pertanyaan9',
         pageIndex: 1,
         question:
-            'G3. Porsi makan (apakah anak menghabiskan makanan yang disediakan?)',
+            'G3. Porsi makan (apakah anak menghabiskan makanan yang disediakan saat sekarang (sakit)?)',
         type: QuestionType.choice,
         options: ['Selalu habis', 'Sebagian', 'Sering tidak habis'],
         icon: Icons.set_meal,
@@ -1547,7 +1547,7 @@ class _AddChildPageState extends State<AddChildPage> {
         id: 'pertanyaan11',
         pageIndex: 1,
         question:
-            'G5. Masalah makan (apakah anak ada masalah dalam makan sehari-hari? contoh: muntah, sulit menelan)',
+            'G5. Masalah makan (apakah anak ada masalah dalam makan sehari-hari saat sekarang (sakit)? contoh: muntah, sulit menelan)',
         type: QuestionType.choice,
         options: ['Tidak ada', 'Ada'],
         icon: Icons.error_outline,
@@ -1630,7 +1630,7 @@ class _AddChildPageState extends State<AddChildPage> {
       _QuestionConfig(
         id: 'pertanyaan18',
         pageIndex: 2,
-        question: 'G. Saya dapat melakukan tayamum.',
+        question: 'G. Saya dapat melakukan tayamum (bersuci sebelum shalat tanpa air).',
         type: QuestionType.choice,
         options: ['Mampu', 'Tidak mampu'],
         icon: Icons.grain,
@@ -1681,8 +1681,8 @@ class _AddChildPageState extends State<AddChildPage> {
         question: 'C. Pengobatan yang pernah saya lakukan:',
         type: QuestionType.choice,
         options: [
-          'Menempuh jalur medis sebagai ikhtiar dan tetap pasrah pada Allah SWT',
-          'Tidak menempuh jalur medis, tapi dengan...',
+          'Segera datang melakukan pemeriksaan ke pelayanan kesehatan terdekat sebagai ikhtiar',
+          'Tidak melakukan pemeriksaan ke pelayanan kesehatan, tapi dengan...',
         ],
         icon: Icons.local_hospital,
         iconColor: Colors.red.shade100,
@@ -1692,7 +1692,7 @@ class _AddChildPageState extends State<AddChildPage> {
       _QuestionConfig(
         id: 'pertanyaan23',
         pageIndex: 3,
-        question: 'D. Saya yakin dengan pengobatan medis.',
+        question: 'D. Saya yakin dengan pengobatan di pelanan kesehatan.',
         type: QuestionType.choice,
         options: [
           'Yakin bahwa pengobatan medis adalah jalan Allah SWT',
@@ -1760,7 +1760,7 @@ class _AddChildPageState extends State<AddChildPage> {
       _QuestionConfig(
         id: 'pertanyaan29',
         pageIndex: 4,
-        question: 'C. Ketika anak saya sakit, kami mencari pengobatan...',
+        question: 'C. Ketika saya sakit, keluarga saya mencari pengobatan...',
         type: QuestionType.choice,
         options: [
           'Ke pelayanan kesehatan sebagai bentuk ikhtiar dan doa',

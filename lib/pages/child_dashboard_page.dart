@@ -5,6 +5,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../models/child_model.dart';
 import '../models/video_model.dart';
 import '../models/scheduled_reminder_model.dart';
+import '../services/child_services.dart';
 import '../services/video_service.dart';
 import '../services/reminder_service.dart';
 import '../cubit/auth_cubit.dart';
@@ -197,6 +198,48 @@ class _ChildDashboardContentState extends State<_ChildDashboardContent> {
   List<ScheduledReminder> _scheduledReminders = [];
   bool _isLoadingReminders = false;
 
+  final Map<String, String> _hifzDiagnoses = {
+    'adDiin': '',
+    'anNafs': '',
+    'alAql': '',
+    'anNasl': '',
+    'alMal': '',
+  };
+
+  final Map<String, String> _hifzNotes = {
+    'adDiin': '',
+    'anNafs': '',
+    'alAql': '',
+    'anNasl': '',
+    'alMal': '',
+  };
+
+  Future<void> _loadExistingHifzDiagnoses() async {
+    try {
+      final map = await ChildServices().getHifzDiagnosesForChild(
+        parentId: widget.child.parentId,
+        childId: widget.child.id,
+      );
+
+      setState(() {
+        map.forEach((aspectKey, data) {
+          final diagnosis = data['diagnosis'] as String?;
+          final note = data['note'] as String?;
+
+          if (diagnosis != null && diagnosis.isNotEmpty) {
+            _hifzDiagnoses[aspectKey] = diagnosis;
+          }
+          if (note != null && note.isNotEmpty) {
+            _hifzNotes[aspectKey] = note;
+          }
+        });
+      });
+    } catch (e) {
+      debugPrint('❌ Gagal load HIFZ diagnosis di dashboard anak: $e');
+    }
+  }
+
+
   @override
   void initState() {
     super.initState();
@@ -229,6 +272,8 @@ class _ChildDashboardContentState extends State<_ChildDashboardContent> {
     recommendations = videoService.getVideoRecommendations(widget.child);
 
     hasPrayerReminder = _checkPrayerReminder();
+
+    _loadExistingHifzDiagnoses();
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _setupReminders();
@@ -810,6 +855,7 @@ class _ChildDashboardContentState extends State<_ChildDashboardContent> {
           ),
           const SizedBox(height: 16),
           _buildHifzAspectItem(
+            aspectKey: 'adDiin', // 👈
             title: 'Hifz Ad-Diin',
             subtitle: 'Spiritual & Keagamaan',
             score: hifzDiinScore,
@@ -819,6 +865,7 @@ class _ChildDashboardContentState extends State<_ChildDashboardContent> {
           ),
           const SizedBox(height: 12),
           _buildHifzAspectItem(
+            aspectKey: 'anNafs',
             title: 'Hifz An-Nafs',
             subtitle: 'Jiwa & Keselamatan',
             score: hifzNafsScore,
@@ -828,6 +875,7 @@ class _ChildDashboardContentState extends State<_ChildDashboardContent> {
           ),
           const SizedBox(height: 12),
           _buildHifzAspectItem(
+            aspectKey: 'alAql',
             title: "Hifz Al-'Aql",
             subtitle: 'Akal & Perkembangan',
             score: hifzAqlScore,
@@ -837,6 +885,7 @@ class _ChildDashboardContentState extends State<_ChildDashboardContent> {
           ),
           const SizedBox(height: 12),
           _buildHifzAspectItem(
+            aspectKey: 'anNasl',
             title: 'Hifz An-Nasl',
             subtitle: 'Keturunan & Pola Asuh',
             score: hifzNaslScore,
@@ -846,6 +895,7 @@ class _ChildDashboardContentState extends State<_ChildDashboardContent> {
           ),
           const SizedBox(height: 12),
           _buildHifzAspectItem(
+            aspectKey: 'alMal',
             title: 'Hifz Al-Mal',
             subtitle: 'Ekonomi Keluarga',
             score: hifzMalScore,
@@ -859,6 +909,7 @@ class _ChildDashboardContentState extends State<_ChildDashboardContent> {
   }
 
   Widget _buildHifzAspectItem({
+    required String aspectKey,
     required String title,
     required String subtitle,
     required int score,
@@ -866,6 +917,9 @@ class _ChildDashboardContentState extends State<_ChildDashboardContent> {
     required IconData icon,
     required Color color,
   }) {
+    final diagnosis = _hifzDiagnoses[aspectKey] ?? '';
+    final note = _hifzNotes[aspectKey] ?? '';
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -873,58 +927,111 @@ class _ChildDashboardContentState extends State<_ChildDashboardContent> {
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: color.withValues(alpha: 0.1)),
       ),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(
-              color: color.withValues(alpha: 0.1),
-              shape: BoxShape.circle,
-            ),
-            child: Icon(icon, color: color, size: 20),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.w600,
-                    fontSize: 14,
-                  ),
-                ),
-                Text(
-                  subtitle,
-                  style: TextStyle(
-                    color: Colors.grey.shade600,
-                    fontSize: 12,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
+          Row(
             children: [
-              Text(
-                '$score',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                  color: color,
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: color.withValues(alpha: 0.1),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(icon, color: color, size: 20),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w600,
+                        fontSize: 14,
+                      ),
+                    ),
+                    Text(
+                      subtitle,
+                      style: TextStyle(
+                        color: Colors.grey.shade600,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
                 ),
               ),
-              Text(
-                category,
-                style: TextStyle(
-                  color: Colors.grey.shade600,
-                  fontSize: 11,
-                ),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Text(
+                    '$score',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: color,
+                    ),
+                  ),
+                  Text(
+                    category,
+                    style: TextStyle(
+                      color: Colors.grey.shade600,
+                      fontSize: 11,
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
+
+          // 👇 Tambahan: tampilkan feedback/diagnosa perawat kalau ada
+          if (diagnosis.isNotEmpty || note.isNotEmpty) ...[
+            const SizedBox(height: 10),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: color.withValues(alpha: 0.2)),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Feedback & Diagnosa Perawat',
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: color,
+                    ),
+                  ),
+                  if (diagnosis.isNotEmpty) ...[
+                    const SizedBox(height: 6),
+                    Text(
+                      diagnosis,
+                      style: const TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                  if (note.isNotEmpty) ...[
+                    const SizedBox(height: 4),
+                    Text(
+                      note,
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.grey.shade700,
+                        height: 1.3,
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ],
         ],
       ),
     );

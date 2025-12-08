@@ -69,4 +69,31 @@ class ChildCubit extends Cubit<ChildState> {
       emit(ChildFailed(e.toString()));
     }
   }
+
+  Future<void> saveDiagnosis({
+    required String parentId,
+    required ChildModel child,
+    required String diagnosis,
+    required String note,
+    String? nurseId,
+    String? nurseName,
+  }) async {
+    try {
+      debugPrint(
+        '[ChildCubit] saveDiagnosis untuk childId=${child.id}, parentId=$parentId',
+      );
+      await _services.saveDiagnosisForChild(
+        parentId: parentId,
+        child: child,
+        diagnosis: diagnosis,
+        note: note,
+        nurseId: nurseId,
+        nurseName: nurseName,
+      );
+      // Tidak mengubah state list anak, hanya log
+    } catch (e) {
+      debugPrint('[ChildCubit] ❌ saveDiagnosis error: $e');
+      emit(ChildFailed(e.toString()));
+    }
+  }
 }

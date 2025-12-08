@@ -7,7 +7,7 @@ import '../models/user_model.dart';
 class AuthServices {
   final FirebaseAuth _auth = FirebaseAuth.instance;
 
-  String _getUserFriendlyError(dynamic error) {
+  String _getUserFriendlyError(dynamic error, {String? username}) {
     final errorString = error.toString().toLowerCase();
 
     // 👇 TANGANI ERROR EMAIL BELUM TERVERIFIKASI SECARA KHUSUS
@@ -23,7 +23,7 @@ class AuthServices {
 
     if (errorString.contains('user-not-found') ||
         errorString.contains('invalid-credential')) {
-      return 'Email tidak ditemukan. Periksa kembali email atau password Anda.';
+      return 'Username tidak ditemukan. Periksa kembali username atau password Anda.';
     } else if (errorString.contains('wrong-password')) {
       return 'Password yang dimasukkan salah. Silakan coba lagi.';
     } else if (errorString.contains('network-request-failed')) {
@@ -31,11 +31,14 @@ class AuthServices {
     } else if (errorString.contains('too-many-requests')) {
       return 'Terlalu banyak percobaan login. Tunggu beberapa saat lagi.';
     } else if (errorString.contains('email-already-in-use')) {
-      return 'Email sudah digunakan. Silakan pilih email lain.';
+      // 👇 MODIFIKASI PESAN ERROR UNTUK USERNAME SUDAH DIGUNAKAN
+      return 'Username "$username" sudah digunakan. Silakan pilih username lain.';
+      // Jika Anda memiliki akses ke username di sini, ganti "$username" dengan variabel username
+      // return 'Username sudah digunakan. Silakan pilih username lain.';
     } else if (errorString.contains('weak-password')) {
       return 'Password terlalu lemah. Gunakan minimal 6 karakter.';
     } else if (errorString.contains('invalid-email')) {
-      return 'Format email tidak valid.';
+      return 'Format username tidak valid.';
     } else if (errorString.contains('user-disabled')) {
       return 'Akun ini telah dinonaktifkan.';
     } else {
@@ -133,7 +136,7 @@ class AuthServices {
 
       return user;
     } catch (e) {
-      rethrow;
+      throw Exception(_getUserFriendlyError(e, username: username));
     }
   }
 

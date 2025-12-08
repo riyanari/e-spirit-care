@@ -36,14 +36,12 @@ class _SplashPageState extends State<SplashPage> {
         return;
       }
 
-      // ✅ CUKUP CEK user SAJA
       if (user == null) {
         debugPrint('[SPLASH] user null → pindah ke /login');
         Navigator.pushNamedAndRemoveUntil(context, '/login', (_) => false);
         return;
       }
 
-      // Reload untuk pastikan user masih valid
       await user.reload();
       final refreshedUser = FirebaseAuth.instance.currentUser;
       debugPrint('[SPLASH] refreshedUser: ${refreshedUser?.uid}');
@@ -54,7 +52,6 @@ class _SplashPageState extends State<SplashPage> {
         return;
       }
 
-      // Panggil cubit
       final authCubit = context.read<AuthCubit>();
       debugPrint('[SPLASH] Panggil authCubit.getCurrentUser(${refreshedUser.uid})');
 
@@ -69,23 +66,52 @@ class _SplashPageState extends State<SplashPage> {
         final role = state.user.role.toLowerCase();
         debugPrint('[SPLASH] Role user: $role');
 
-        if (role == 'admin') {
-          debugPrint('[SPLASH] Role admin → ke /list-ortu-page');
+        if (role == 'admin' || role == 'perawat') {
+          debugPrint('[SPLASH] Role admin/perawat → ke /list-ortu');
           Navigator.pushNamedAndRemoveUntil(
             context,
             '/list-ortu',
                 (_) => false,
           );
         } else {
-          debugPrint('[SPLASH] Role bukan admin → ke /home');
+          debugPrint('[SPLASH] Role ortu/lainnya → ke /home');
           Navigator.pushNamedAndRemoveUntil(
             context,
             '/home',
                 (_) => false,
           );
         }
+      } else if (state is AuthFailed &&
+          state.error.contains('User tidak ditemukan di database')) {
+        // 🔁 Coba cek sebagai child
+        debugPrint('[SPLASH] User bukan ortu/admin/perawat → cek sebagai child');
+
+        await authCubit.getCurrentChild(refreshedUser.uid);
+        final childState = authCubit.state;
+
+        if (!mounted) return;
+
+        if (childState is ChildAuthSuccess) {
+          debugPrint('[SPLASH] Ditemukan child → ke /child-dashboard');
+          Navigator.pushNamedAndRemoveUntil(
+            context,
+            '/child-dashboard',
+                (_) => false,
+          );
+        } else {
+          debugPrint('[SPLASH] Tidak ditemukan child → ke /login');
+          Navigator.pushNamedAndRemoveUntil(context, '/login', (_) => false);
+        }
+      } else if (state is ChildAuthSuccess) {
+        // (Kalau suatu saat getCurrentUser kamu sendiri sudah bisa emit ChildAuthSuccess)
+        debugPrint('[SPLASH] ChildAuthSuccess langsung → /child-dashboard');
+        Navigator.pushNamedAndRemoveUntil(
+          context,
+          '/child-dashboard',
+              (_) => false,
+        );
       } else {
-        debugPrint('[SPLASH] State bukan AuthSuccess → ke /login');
+        debugPrint('[SPLASH] State lain → ke /login');
         Navigator.pushNamedAndRemoveUntil(context, '/login', (_) => false);
       }
     } catch (e, s) {
@@ -95,9 +121,6 @@ class _SplashPageState extends State<SplashPage> {
       Navigator.pushNamedAndRemoveUntil(context, '/login', (_) => false);
     }
   }
-
-
-
 
   @override
   Widget build(BuildContext context) {

@@ -66,6 +66,23 @@ class _AddNursePageState extends State<AddNursePage> {
       _signupError = null;
     });
 
+    // 👇 VALIDASI FORMAT USERNAME
+    if (username.contains(' ')) {
+      setState(() {
+        isUsernameError = true;
+        _signupError = 'Username tidak boleh mengandung spasi';
+      });
+      return;
+    }
+
+    if (username.length < 3) {
+      setState(() {
+        isUsernameError = true;
+        _signupError = 'Username minimal 3 karakter';
+      });
+      return;
+    }
+
     if (!isNameError &&
         !isUsernameError &&
         !isPasswordError &&

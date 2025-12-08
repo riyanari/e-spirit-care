@@ -82,14 +82,19 @@ class AuthCubit extends Cubit<AuthState> {
     required String hp,
     required String email,
     required String role,
-    required String jenisKelamin,       // 👈 NEW
-    required String statusPerkawinan,   // 👈 NEW
-    required String pendidikan,         // 👈 NEW
-    required String alamat,             // 👈 NEW
-    required String hubunganAnak,       // 👈 NEW
+    required String jenisKelamin,
+    required String statusPerkawinan,
+    required String pendidikan,
+    required String alamat,
+    required String hubunganAnak,
+    bool isAdminAddingUser = false,
   }) async {
+    // ⬇️ simpan state sebelum diubah jadi loading
+    final previousState = state;
+
     try {
       emit(AuthLoading());
+
       final user = await _authServices.signUp(
         username: username,
         password: password,
@@ -106,10 +111,23 @@ class AuthCubit extends Cubit<AuthState> {
         hubunganAnak: hubunganAnak,
       );
 
-      SharedPreferences prefs = await SharedPreferences.getInstance();
-      await prefs.setBool('isLoggedIn', true);
+      if (isAdminAddingUser) {
+        // ❌ jangan set isLoggedIn untuk user baru
+        // ✅ kembalikan state ke admin yang lagi login
 
-      emit(AuthSuccess(user));
+        if (previousState is AuthSuccess) {
+          // restore admin asli
+          emit(previousState);
+        } else {
+          // fallback: kalau entah kenapa sebelumnya bukan AuthSuccess
+          emit(AuthInitial());
+        }
+      } else {
+        // User daftar sendiri → login sebagai user baru
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setBool('isLoggedIn', true);
+        emit(AuthSuccess(user));
+      }
     } catch (e) {
       emit(AuthFailed(e.toString()));
     }
