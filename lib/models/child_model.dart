@@ -1,4 +1,5 @@
 import 'package:equatable/equatable.dart';
+import 'package:flutter/material.dart';
 
 class ChildModel extends Equatable {
   final String id;
@@ -118,6 +119,175 @@ class ChildModel extends Equatable {
       'role': role,
       'createdAt': DateTime.now().toIso8601String(),
     };
+  }
+
+  /// Mapping pertanyaan per aspek Hifz
+  Map<String, Map<String, List<String>>> get hifzQuestionMapping {
+    return {
+      'an_nafs': {
+        'A. Keluhan Utama': ['pertanyaan1'],
+        'B. Sakit Sekarang': ['pertanyaan2'],
+        'C. Riwayat Penyakit': ['pertanyaan3'],
+        'D. Obat yang Pernah Dikonsumsi': ['pertanyaan4'],
+        'E. Riwayat Alergi Obat': ['pertanyaan5', 'pertanyaan5_detail'],
+        'F. Riwayat Alergi Makanan': ['pertanyaan6', 'pertanyaan6_detail'],
+        'G1. Frekuensi Makan': ['pertanyaan7'],
+        'G2. Jenis Makanan': ['pertanyaan8'],
+        'G3. Porsi Makan': ['pertanyaan9'],
+        'G4. Kebiasaan Makan Khusus': ['pertanyaan10', 'pertanyaan10_detail'],
+        'G5. Masalah Makan': ['pertanyaan11', 'pertanyaan11_detail'],
+      },
+      'ad_diin': {
+        'A. Yakin Allah Akan Memberikan Kesembuhan': ['pertanyaan12', 'pertanyaan12_detail'],
+        'B. Yakin Allah Selalu Bersama Saya': ['pertanyaan13', 'pertanyaan13_detail'],
+        'C. Kesulitan Melakukan Sholat': ['pertanyaan14', 'pertanyaan14_detail'],
+        'D. Tahu Cara Sholat Saat Sakit': ['pertanyaan15'],
+        'E. Perlu Pendampingan Sholat': ['pertanyaan16', 'pertanyaan16_detail'],
+        'F. Cara Melakukan Sholat': ['pertanyaan17'],
+        'G. Dapat Melakukan Tayamum': ['pertanyaan18', 'pertanyaan18_detail'],
+        'H. Perlu Bantuan Tayamum': ['pertanyaan19'],
+      },
+      'al_aql': {
+        'A. Tahu Sakit Ujian dari Allah': ['pertanyaan20', 'pertanyaan20_detail'],
+        'B. Asal Sehat dan Sakit': ['pertanyaan21', 'pertanyaan21_detail'],
+        'C. Pengobatan yang Pernah Dilakukan': ['pertanyaan22', 'pertanyaan22_detail'],
+        'D. Yakin dengan Pengobatan Medis': ['pertanyaan23', 'pertanyaan23_detail'],
+        'E. Tahu Kebutuhan Ibadah Saat Sakit': ['pertanyaan24', 'pertanyaan24_detail'],
+        'F. Tahu Ada Hikmah Saat Sakit': ['pertanyaan25'],
+        'G. Tahu Larangan Islam Saat Sakit': ['pertanyaan26'],
+      },
+      'an_nasl': {
+        'A. Keluarga Yakin Takdir Allah': ['pertanyaan27', 'pertanyaan27_detail'],
+        'B. Asal Sakit Menurut Keluarga': ['pertanyaan28', 'pertanyaan28_detail'],
+        'C. Pengobatan Keluarga': ['pertanyaan29', 'pertanyaan29_detail'],
+        'D. Orang Tua Membantu Doa': ['pertanyaan30', 'pertanyaan30_detail'],
+        'E. Orang Tua Membantu Sholat/Ibadah': ['pertanyaan31'],
+        'F. Orang Tua Membiasakan Ibadah': ['pertanyaan32'],
+        'G. Sering Diperdengarkan Al-Qur\'an': ['pertanyaan33'],
+        'H. Tahu Tubuh Harus Dijaga': ['pertanyaan34'],
+        'I. Tahu Bagian Tubuh Privat': ['pertanyaan35'],
+        'J. Orang Tua Mengingatkan Kebersihan': ['pertanyaan36'],
+        'K. Tahu Perubahan Tubuh Normal': ['pertanyaan37'],
+        'L. Orang Tua Menjelaskan Perubahan Tubuh': ['pertanyaan38'],
+        'M. Merasa Aman Saat Dirawat': ['pertanyaan39'],
+      },
+      'al_mal': {
+        'A. Pekerja dalam Keluarga': ['pertanyaan40'],
+        'B. Kebutuhan Makan-Minum Tercukupi': ['pertanyaan41'],
+        'C. Pekerjaan Orang Tua': ['pertanyaan42'],
+        'D. Kegiatan Menghasilkan Uang': ['pertanyaan43', 'pertanyaan43_detail'],
+        'E. Kepemilikan Asuransi': ['pertanyaan44'],
+        'F. Keluhan Biaya Rumah Sakit': ['pertanyaan45', 'pertanyaan45_detail'],
+      },
+    };
+  }
+
+  /// Mendapatkan daftar pertanyaan untuk Hifz tertentu
+  Map<String, List<String>> getQuestionsForHifz(String hifzKey) {
+    return hifzQuestionMapping[hifzKey] ?? {};
+  }
+
+  /// Mendapatkan jawaban untuk pertanyaan tertentu
+  String getAnswer(String questionId) {
+    return pertanyaan[questionId] ?? '-';
+  }
+
+  /// Mendapatkan semua jawaban untuk Hifz tertentu
+  List<Map<String, dynamic>> getHifzAnswers(String hifzKey) {
+    final questions = getQuestionsForHifz(hifzKey);
+    final answers = <Map<String, dynamic>>[];
+
+    questions.forEach((questionText, questionIds) {
+      final questionAnswers = <String>[];
+      for (var id in questionIds) {
+        final answer = getAnswer(id);
+        if (answer != '-') {
+          questionAnswers.add(answer);
+        }
+      }
+
+      if (questionAnswers.isNotEmpty) {
+        answers.add({
+          'question': questionText,
+          'answers': questionAnswers,
+        });
+      }
+    });
+
+    return answers;
+  }
+
+  Map<String, String> getAllAnswers() {
+    return pertanyaan;
+  }
+
+  /// Mendapatkan jumlah jawaban yang telah diisi
+  int getFilledAnswersCount() {
+    return pertanyaan.values.where((answer) => answer.isNotEmpty && answer != '-').length;
+  }
+
+  /// Mendapatkan presentase kelengkapan jawaban
+  double getAnswerCompletionPercentage() {
+    final total = pertanyaan.length;
+    if (total == 0) return 0.0;
+    final filled = getFilledAnswersCount();
+    return (filled / total) * 100;
+  }
+
+  /// Mendapatkan data lengkap Hifz
+  Map<String, dynamic> getHifzData(String hifzKey) {
+    final hifzMap = {
+      'an_nafs': {
+        'title': 'Hifz An-Nafs',
+        'subtitle': 'Penjagaan Jiwa dan Keselamatan',
+        'icon': Icons.health_and_safety,
+        'color': Colors.red,
+        'score': hifzAnNafsScore,
+        'category': hifzAnNafsCategory,
+        'video': hifzAnNafsVideo,
+      },
+      'ad_diin': {
+        'title': 'Hifz Ad-Diin',
+        'subtitle': 'Penjagaan Spiritual',
+        'icon': Icons.mosque,
+        'color': Colors.green,
+        'score': hifzAdDiinScore,
+        'category': hifzAdDiinCategory,
+        'video': hifzAdDiinVideo,
+      },
+      'al_aql': {
+        'title': 'Hifz Al-Aql',
+        'subtitle': 'Penjagaan Akal dan Perkembangan',
+        'icon': Icons.psychology,
+        'color': Colors.purple,
+        'score': hifzAlAqlScore,
+        'category': hifzAlAqlCategory,
+        'video': hifzAlAqlVideo,
+      },
+      'an_nasl': {
+        'title': 'Hifz An-Nasl',
+        'subtitle': 'Penjagaan Keturunan dan Pola Asuh',
+        'icon': Icons.family_restroom,
+        'color': Colors.orange,
+        'score': hifzAnNaslScore,
+        'category': hifzAnNaslCategory,
+        'video': hifzAnNaslVideo,
+      },
+      'al_mal': {
+        'title': 'Hifz Al-Mal',
+        'subtitle': 'Penjagaan Ekonomi Keluarga',
+        'icon': Icons.savings,
+        'color': Colors.blue,
+        'score': hifzAlMalScore,
+        'category': hifzAlMalCategory,
+        'video': hifzAlMalVideo,
+      },
+    };
+
+    final data = hifzMap[hifzKey] ?? {};
+    data['answers'] = getHifzAnswers(hifzKey);
+
+    return data;
   }
 
   // =========================

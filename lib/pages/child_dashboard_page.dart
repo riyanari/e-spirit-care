@@ -1,4 +1,5 @@
 import 'package:e_spirit_care/pages/video_player_page.dart';
+import 'package:e_spirit_care/pages/hifz_detail_page.dart'; // Import halaman detail
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -177,7 +178,7 @@ class _ChildDashboardContentState extends State<_ChildDashboardContent> {
 
   late List<VideoModel> recommendations;
 
-  // ===== HIFZ per aspek (SAMA dengan VideoRecommendationsPage) =====
+  // ===== HIFZ per aspek =====
   late int hifzNafsScore;
   late int hifzDiinScore;
   late int hifzAqlScore;
@@ -191,7 +192,7 @@ class _ChildDashboardContentState extends State<_ChildDashboardContent> {
   late String hifzMalCategory;
 
   late int totalScore;
-  late String overallCategory; // Tinggi / Sedang / Rendah (berdasarkan HIFZ)
+  late String overallCategory;
 
   bool hasPrayerReminder = false;
   bool reminderScheduled = false;
@@ -213,6 +214,9 @@ class _ChildDashboardContentState extends State<_ChildDashboardContent> {
     'anNasl': '',
     'alMal': '',
   };
+
+  // Data HIFZ lengkap
+  late Map<String, Map<String, dynamic>> _hifzData = {};
 
   Future<void> _loadExistingHifzDiagnoses() async {
     try {
@@ -239,6 +243,17 @@ class _ChildDashboardContentState extends State<_ChildDashboardContent> {
     }
   }
 
+  void _loadHifzData() {
+    setState(() {
+      _hifzData = {
+        'an_nafs': widget.child.getHifzData('an_nafs'),
+        'ad_diin': widget.child.getHifzData('ad_diin'),
+        'al_aql': widget.child.getHifzData('al_aql'),
+        'an_nasl': widget.child.getHifzData('an_nasl'),
+        'al_mal': widget.child.getHifzData('al_mal'),
+      };
+    });
+  }
 
   @override
   void initState() {
@@ -257,22 +272,22 @@ class _ChildDashboardContentState extends State<_ChildDashboardContent> {
     hifzNaslCategory = widget.child.hifzAnNaslCategory;
     hifzMalCategory = widget.child.hifzAlMalCategory;
 
-    // total skor gabungan (pakai 5 skor HIFZ, bukan lagi child.totalSkor)
+    // total skor gabungan
     totalScore = hifzNafsScore +
         hifzDiinScore +
         hifzAqlScore +
         hifzNaslScore +
         hifzMalScore;
 
-    // kategori overall dari kombinasi 5 aspek
+    // kategori overall
     overallCategory = _getOverallCategory();
 
-    // rekomendasi video berdasarkan kategori perkembangan anak (Tinggi/Sedang/Rendah)
-    // ini tetap pakai child.kategori seperti di VideoService
+    // rekomendasi video
     recommendations = videoService.getVideoRecommendations(widget.child);
 
     hasPrayerReminder = _checkPrayerReminder();
 
+    _loadHifzData();
     _loadExistingHifzDiagnoses();
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -280,10 +295,6 @@ class _ChildDashboardContentState extends State<_ChildDashboardContent> {
       _loadScheduledReminders();
     });
   }
-
-  // =========================================================
-  // LOGIC HIFZ / KATEGORI OVERALL (copy dari VideoRecommendationsPage)
-  // =========================================================
 
   String _getOverallCategory() {
     final levels = [
@@ -301,12 +312,9 @@ class _ChildDashboardContentState extends State<_ChildDashboardContent> {
     return 'Rendah';
   }
 
-  /// Konversi kategori per HIFZ menjadi level numerik:
-  /// 2 = baik/aman/sejahtera, 1 = risiko, 0 = masalah berat
   int _aspectLevel(String category) {
     final text = category.toLowerCase();
 
-    // kondisi baik
     if (text.contains('aman') ||
         text.contains('kesejahteraan') ||
         text.contains('perkembangan baik') ||
@@ -315,12 +323,10 @@ class _ChildDashboardContentState extends State<_ChildDashboardContent> {
       return 2;
     }
 
-    // risiko sedang
     if (text.contains('risiko')) {
       return 1;
     }
 
-    // kondisi berat (distres, gangguan, buruk, ketidakcukupan berat, dll.)
     return 0;
   }
 
@@ -520,7 +526,7 @@ class _ChildDashboardContentState extends State<_ChildDashboardContent> {
               _buildScoreCard(totalScore, overallCategory),
               const SizedBox(height: 24),
 
-              // LIST HIFZ per aspek (tambahan baru)
+              // LIST HIFZ per aspek dengan detail
               _buildHifzAspectsCard(),
               const SizedBox(height: 24),
 
@@ -826,7 +832,7 @@ class _ChildDashboardContentState extends State<_ChildDashboardContent> {
   }
 
   // ==========================
-  // CARD RINGKASAN HIFZ (baru)
+  // CARD HIFZ DENGAN DETAIL
   // ==========================
   Widget _buildHifzAspectsCard() {
     return Container(
@@ -845,17 +851,45 @@ class _ChildDashboardContentState extends State<_ChildDashboardContent> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'Aspek HIFZ',
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text(
+                'Aspek HIFZ',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black87,
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(
+                  color: kPrimaryColor.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Text(
+                  '5 Aspek',
+                  style: TextStyle(
+                    color: kPrimaryColor,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Analisis komprehensif berdasarkan kuesioner',
             style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-              color: Colors.black87,
+              color: Colors.grey.shade600,
+              fontSize: 14,
             ),
           ),
           const SizedBox(height: 16),
           _buildHifzAspectItem(
-            aspectKey: 'adDiin', // 👈
+            aspectKey: 'adDiin',
             title: 'Hifz Ad-Diin',
             subtitle: 'Spiritual & Keagamaan',
             score: hifzDiinScore,
@@ -863,7 +897,7 @@ class _ChildDashboardContentState extends State<_ChildDashboardContent> {
             icon: Icons.mosque,
             color: Colors.green,
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 16),
           _buildHifzAspectItem(
             aspectKey: 'anNafs',
             title: 'Hifz An-Nafs',
@@ -873,7 +907,7 @@ class _ChildDashboardContentState extends State<_ChildDashboardContent> {
             icon: Icons.health_and_safety,
             color: Colors.red,
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 16),
           _buildHifzAspectItem(
             aspectKey: 'alAql',
             title: "Hifz Al-'Aql",
@@ -883,7 +917,7 @@ class _ChildDashboardContentState extends State<_ChildDashboardContent> {
             icon: Icons.psychology,
             color: Colors.purple,
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 16),
           _buildHifzAspectItem(
             aspectKey: 'anNasl',
             title: 'Hifz An-Nasl',
@@ -893,7 +927,7 @@ class _ChildDashboardContentState extends State<_ChildDashboardContent> {
             icon: Icons.family_restroom,
             color: Colors.orange,
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 16),
           _buildHifzAspectItem(
             aspectKey: 'alMal',
             title: 'Hifz Al-Mal',
@@ -902,6 +936,24 @@ class _ChildDashboardContentState extends State<_ChildDashboardContent> {
             category: hifzMalCategory,
             icon: Icons.savings,
             color: Colors.blue,
+          ),
+          const SizedBox(height: 8),
+          Divider(color: Colors.grey.shade300),
+          const SizedBox(height: 8),
+          Align(
+            alignment: Alignment.center,
+            child: TextButton.icon(
+              onPressed: () {
+                // Aksi untuk melihat semua detail HIFZ
+                _showAllHifzOverview();
+              },
+              icon: const Icon(Icons.analytics, size: 18),
+              label: const Text('Lihat Analisis Lengkap'),
+              style: TextButton.styleFrom(
+                foregroundColor: kPrimaryColor,
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+              ),
+            ),
           ),
         ],
       ),
@@ -917,39 +969,57 @@ class _ChildDashboardContentState extends State<_ChildDashboardContent> {
     required IconData icon,
     required Color color,
   }) {
+    final hifzKeyMap = {
+      'adDiin': 'ad_diin',
+      'anNafs': 'an_nafs',
+      'alAql': 'al_aql',
+      'anNasl': 'an_nasl',
+      'alMal': 'al_mal',
+    };
+
+    final hifzKey = hifzKeyMap[aspectKey] ?? aspectKey.toLowerCase();
+    final hifzData = _hifzData[hifzKey] ?? {};
+    final answers = (hifzData['answers'] as List<Map<String, dynamic>>?) ?? [];
+    final totalQuestions = answers.length;
     final diagnosis = _hifzDiagnoses[aspectKey] ?? '';
     final note = _hifzNotes[aspectKey] ?? '';
 
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.05),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: color.withValues(alpha: 0.1)),
+        borderRadius: BorderRadius.circular(16),
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [color.withValues(alpha:0.05), color.withValues(alpha:0.02)],
+        ),
+        border: Border.all(color: color.withValues(alpha:0.1)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // Header dengan icon dan skor
           Row(
             children: [
               Container(
-                padding: const EdgeInsets.all(10),
+                padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: color.withValues(alpha: 0.1),
+                  color: color.withValues(alpha:0.1),
                   shape: BoxShape.circle,
                 ),
-                child: Icon(icon, color: color, size: 20),
+                child: Icon(icon, color: color, size: 24),
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: 16),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
                       title,
-                      style: const TextStyle(
-                        fontWeight: FontWeight.w600,
-                        fontSize: 14,
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                        color: color,
                       ),
                     ),
                     Text(
@@ -962,50 +1032,227 @@ class _ChildDashboardContentState extends State<_ChildDashboardContent> {
                   ],
                 ),
               ),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(
+                  color: color.withValues(alpha:0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Column(
+                  children: [
+                    Text(
+                      '$score',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: color,
+                      ),
+                    ),
+                    Text(
+                      'Skor',
+                      style: TextStyle(
+                        color: color.withValues(alpha:0.8),
+                        fontSize: 10,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+
+          // Progress Bar
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    '$score',
+                    'Kategori: $category',
                     style: TextStyle(
-                      fontSize: 16,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.grey.shade700,
+                    ),
+                  ),
+                  Text(
+                    '${(score / 20 * 100).round()}%',
+                    style: TextStyle(
+                      fontSize: 13,
                       fontWeight: FontWeight.bold,
                       color: color,
                     ),
                   ),
-                  Text(
-                    category,
-                    style: TextStyle(
-                      color: Colors.grey.shade600,
-                      fontSize: 11,
-                    ),
-                  ),
                 ],
+              ),
+              const SizedBox(height: 8),
+              LinearProgressIndicator(
+                value: score / 20,
+                backgroundColor: color.withValues(alpha:0.2),
+                valueColor: AlwaysStoppedAnimation<Color>(color),
+                borderRadius: BorderRadius.circular(4),
+                minHeight: 8,
               ),
             ],
           ),
+          const SizedBox(height: 12),
 
-          // 👇 Tambahan: tampilkan feedback/diagnosa perawat kalau ada
-          if (diagnosis.isNotEmpty || note.isNotEmpty) ...[
-            const SizedBox(height: 10),
+          // Info Jawaban
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: color.withValues(alpha:0.05),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Jawaban Kuesioner',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: color,
+                        ),
+                      ),
+                      Text(
+                        '$totalQuestions pertanyaan terjawab',
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: Colors.grey.shade600,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                SizedBox(width: 4,),
+                ElevatedButton.icon(
+                  onPressed: () => _showHifzDetails(hifzKey, title, color, icon),
+                  icon: Icon(Icons.visibility, size: 12, color: color),
+                  label: Text(
+                    'Lihat Detail',
+                    style: TextStyle(fontSize: 12, color: color),
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: color.withValues(alpha:0.1),
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          // Preview Jawaban (jika ada)
+          if (answers.isNotEmpty) ...[
+            const SizedBox(height: 12),
             Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(10),
+              padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(10),
-                border: Border.all(color: color.withValues(alpha: 0.2)),
+                border: Border.all(color: Colors.grey.shade200),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    'Feedback & Diagnosa Perawat',
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      color: color,
+                  Row(
+                    children: [
+                      Icon(Icons.question_answer, size: 16, color: color),
+                      const SizedBox(width: 8),
+                      Text(
+                        'Preview Jawaban',
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: color,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  ...answers.take(2).map((qa) {
+                    final question = qa['question'] as String? ?? '';
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 6),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Container(
+                            width: 6,
+                            height: 6,
+                            margin: const EdgeInsets.only(top: 6),
+                            decoration: BoxDecoration(
+                              color: color,
+                              shape: BoxShape.circle,
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              question,
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.grey.shade700,
+                              ),
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  }).toList(),
+                  if (answers.length > 2) ...[
+                    const SizedBox(height: 4),
+                    Text(
+                      '...dan ${answers.length - 2} pertanyaan lainnya',
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: Colors.grey.shade600,
+                      ),
                     ),
+                  ],
+                ],
+              ),
+            ),
+          ],
+
+          // Feedback & Diagnosa Perawat
+          if (diagnosis.isNotEmpty || note.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.green.shade50,
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: Colors.green.shade100),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Icon(Icons.medical_services, size: 16, color: Colors.green),
+                      const SizedBox(width: 8),
+                      Text(
+                        'Catatan Perawat',
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.green,
+                        ),
+                      ),
+                    ],
                   ),
                   if (diagnosis.isNotEmpty) ...[
                     const SizedBox(height: 6),
@@ -1014,6 +1261,7 @@ class _ChildDashboardContentState extends State<_ChildDashboardContent> {
                       style: const TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.w500,
+                        color: Colors.black87,
                       ),
                     ),
                   ],
@@ -1037,8 +1285,567 @@ class _ChildDashboardContentState extends State<_ChildDashboardContent> {
     );
   }
 
+  void _showHifzDetails(String hifzKey, String aspectName, Color color, IconData icon) {
+    final hifzData = _hifzData[hifzKey] ?? {};
+    final answers = (hifzData['answers'] as List<Map<String, dynamic>>?) ?? [];
+    final score = hifzData['score'] as int? ?? 0;
+    final category = hifzData['category'] as String? ?? '';
+    final videoRecommendation = hifzData['video'] as String? ?? '';
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Container(
+        height: MediaQuery.of(context).size.height * 0.85,
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(
+            top: Radius.circular(25),
+          ),
+        ),
+        child: Column(
+          children: [
+            // Header
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: color.withValues(alpha:0.1),
+                borderRadius: const BorderRadius.vertical(
+                  top: Radius.circular(25),
+                ),
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: color.withValues(alpha:0.2),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(icon, color: color, size: 28),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          aspectName,
+                          style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            color: color,
+                          ),
+                        ),
+                        Text(
+                          'Detail Analisis HIFZ',
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: color.withValues(alpha:0.7),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.close, size: 24),
+                    onPressed: () => Navigator.pop(context),
+                  ),
+                ],
+              ),
+            ),
+
+            // Stats Overview
+            Container(
+              padding: const EdgeInsets.all(20),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                children: [
+                  _buildHifzDetailStat('Skor', '$score', Icons.score, color),
+                  _buildHifzDetailStat('Kategori', category, Icons.category, color),
+                  _buildHifzDetailStat(
+                    'Pertanyaan',
+                    '${answers.length}',
+                    Icons.question_answer,
+                    color,
+                  ),
+                ],
+              ),
+            ),
+
+            // Video Recommendation (if available)
+            if (videoRecommendation.isNotEmpty) ...[
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                child: Container(
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(
+                    color: Colors.blue.shade50,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: Colors.blue.shade100),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(Icons.video_library, color: Colors.blue, size: 22),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Rekomendasi Video:',
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                color: Colors.blue.shade800,
+                                fontSize: 14,
+                              ),
+                            ),
+                            Text(
+                              videoRecommendation,
+                              style: TextStyle(
+                                color: Colors.blue.shade700,
+                                fontSize: 13,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+
+            // Content
+            Expanded(
+              child: answers.isEmpty
+                  ? Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.info_outline,
+                      size: 60,
+                      color: Colors.grey.shade400,
+                    ),
+                    const SizedBox(height: 16),
+                    const Text(
+                      'Belum ada data jawaban',
+                      style: TextStyle(
+                        fontSize: 16,
+                        color: Colors.grey,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Kuesioner untuk aspek ini belum diisi',
+                      style: TextStyle(
+                        color: Colors.grey.shade500,
+                      ),
+                    ),
+                  ],
+                ),
+              )
+                  : ListView.builder(
+                padding: const EdgeInsets.all(16),
+                itemCount: answers.length,
+                itemBuilder: (context, index) {
+                  final qa = answers[index];
+                  final question = qa['question'] as String;
+                  final answerList = qa['answers'] as List<String>;
+
+                  return Card(
+                    margin: const EdgeInsets.only(bottom: 16),
+                    elevation: 2,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Container(
+                                width: 30,
+                                height: 30,
+                                margin: const EdgeInsets.only(right: 12),
+                                decoration: BoxDecoration(
+                                  color: color.withValues(alpha:0.1),
+                                  borderRadius: BorderRadius.circular(6),
+                                ),
+                                child: Center(
+                                  child: Text(
+                                    '${index + 1}',
+                                    style: TextStyle(
+                                      color: color,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              Expanded(
+                                child: Text(
+                                  question,
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.w600,
+                                    fontSize: 15,
+                                    color: Colors.black87,
+                                    height: 1.4,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 12),
+                          if (answerList.isNotEmpty) ...[
+                            ...answerList.map((answer) {
+                              return Padding(
+                                padding: const EdgeInsets.only(bottom: 8),
+                                child: Row(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Container(
+                                      width: 8,
+                                      height: 8,
+                                      margin: const EdgeInsets.only(top: 6),
+                                      decoration: BoxDecoration(
+                                        color: color,
+                                        shape: BoxShape.circle,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 12),
+                                    Expanded(
+                                      child: Text(
+                                        answer,
+                                        style: TextStyle(
+                                          fontSize: 14,
+                                          color: Colors.grey.shade700,
+                                          height: 1.5,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              );
+                            }).toList(),
+                          ],
+                        ],
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+
+            // Footer
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.grey.shade50,
+                border: Border(top: BorderSide(color: Colors.grey.shade200)),
+              ),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: () => Navigator.pop(context),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: color,
+                        side: BorderSide(color: color),
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      child: const Text('Tutup'),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: () {
+                        Navigator.pop(context);
+                        _navigateToHifzDetailPage(hifzKey, aspectName, color, icon);
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: color,
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      child: const Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.open_in_new, size: 18, color: Colors.white),
+                          SizedBox(width: 8),
+                          Text(
+                            'Detail Lengkap',
+                            style: TextStyle(color: Colors.white),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildHifzDetailStat(String title, String value, IconData icon, Color color) {
+    return Column(
+      children: [
+        Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: color.withValues(alpha:0.1),
+            shape: BoxShape.circle,
+          ),
+          child: Icon(icon, size: 22, color: color),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          value,
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+            color: color,
+          ),
+        ),
+        Text(
+          title,
+          style: const TextStyle(
+            fontSize: 12,
+            color: Colors.grey,
+          ),
+        ),
+      ],
+    );
+  }
+
+  void _navigateToHifzDetailPage(String hifzKey, String aspectName, Color color, IconData icon) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => HifzDetailPage(
+          child: widget.child,
+          hifzKey: hifzKey,
+        ),
+      ),
+    );
+  }
+
+  void _showAllHifzOverview() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Row(
+          children: [
+            Icon(Icons.analytics, color: kPrimaryColor),
+            SizedBox(width: 12),
+            Text('Analisis HIFZ Lengkap'),
+          ],
+        ),
+        content: SizedBox(
+          width: double.maxFinite,
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Text(
+                  'Ringkasan 5 Aspek Perlindungan Anak',
+                  style: TextStyle(fontSize: 14, color: Colors.grey),
+                ),
+                const SizedBox(height: 20),
+                _buildHifzOverviewItem(
+                  'Hifz Ad-Diin',
+                  hifzDiinScore,
+                  hifzDiinCategory,
+                  Colors.green,
+                  Icons.mosque,
+                  'Spiritual & Keagamaan',
+                ),
+                const SizedBox(height: 12),
+                _buildHifzOverviewItem(
+                  'Hifz An-Nafs',
+                  hifzNafsScore,
+                  hifzNafsCategory,
+                  Colors.red,
+                  Icons.health_and_safety,
+                  'Jiwa & Keselamatan',
+                ),
+                const SizedBox(height: 12),
+                _buildHifzOverviewItem(
+                  "Hifz Al-'Aql",
+                  hifzAqlScore,
+                  hifzAqlCategory,
+                  Colors.purple,
+                  Icons.psychology,
+                  'Akal & Perkembangan',
+                ),
+                const SizedBox(height: 12),
+                _buildHifzOverviewItem(
+                  'Hifz An-Nasl',
+                  hifzNaslScore,
+                  hifzNaslCategory,
+                  Colors.orange,
+                  Icons.family_restroom,
+                  'Keturunan & Pola Asuh',
+                ),
+                const SizedBox(height: 12),
+                _buildHifzOverviewItem(
+                  'Hifz Al-Mal',
+                  hifzMalScore,
+                  hifzMalCategory,
+                  Colors.blue,
+                  Icons.savings,
+                  'Ekonomi Keluarga',
+                ),
+                const SizedBox(height: 20),
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: kPrimaryColor.withValues(alpha:0.05),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Column(
+                    children: [
+                      const Text(
+                        'Total Skor Keseluruhan',
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        '$totalScore',
+                        style: TextStyle(
+                          fontSize: 32,
+                          fontWeight: FontWeight.bold,
+                          color: _getCategoryColor(overallCategory),
+                        ),
+                      ),
+                      Text(
+                        'Kategori: $overallCategory',
+                        style: const TextStyle(fontSize: 14),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Tutup'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(context);
+              // Bisa navigasi ke halaman laporan lengkap
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: kPrimaryColor,
+            ),
+            child: const Text('Laporan PDF'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildHifzOverviewItem(
+      String title,
+      int score,
+      String category,
+      Color color,
+      IconData icon,
+      String subtitle,
+      ) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha:0.05),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: color.withValues(alpha:0.1)),
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: color.withValues(alpha:0.1),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(icon, color: color, size: 20),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: TextStyle(
+                    fontWeight: FontWeight.w600,
+                    color: color,
+                  ),
+                ),
+                Text(
+                  subtitle,
+                  style: const TextStyle(fontSize: 11, color: Colors.grey),
+                ),
+              ],
+            ),
+          ),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Text(
+                '$score',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: color,
+                ),
+              ),
+              Text(
+                category,
+                style: TextStyle(
+                  fontSize: 11,
+                  color: color.withValues(alpha:0.8),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Color _getCategoryColor(String category) {
+    switch (category) {
+      case 'Tinggi':
+        return Colors.green;
+      case 'Sedang':
+        return Colors.orange;
+      case 'Rendah':
+        return Colors.red;
+      default:
+        return kPrimaryColor;
+    }
+  }
+
   // ==========================
-  // REMINDER SECTION
+  // REMINDER SECTION (tetap sama)
   // ==========================
 
   Widget _buildReminderControlSection() {
@@ -1513,7 +2320,7 @@ class _ChildDashboardContentState extends State<_ChildDashboardContent> {
   }
 
   // ==========================
-  // VIDEO SECTION
+  // VIDEO SECTION (tetap sama)
   // ==========================
   Widget _buildVideoSection() {
     return Column(
