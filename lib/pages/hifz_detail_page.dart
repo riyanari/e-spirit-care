@@ -186,7 +186,7 @@ class HifzDetailPage extends StatelessWidget {
             ),
 
             // Questions and Answers
-            ...answers.map((qa) => _buildQuestionCard(qa, color)).toList(),
+            ...answers.map((qa) => _buildQuestionCard(qa, color)),
 
             const SizedBox(height: 40),
           ],
