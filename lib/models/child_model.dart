@@ -1,6 +1,8 @@
 import 'package:equatable/equatable.dart';
 import 'package:flutter/material.dart';
 
+import '../pages/hifz_scoring_system.dart';
+
 class ChildModel extends Equatable {
   final String id;
   final String parentId;
@@ -12,13 +14,7 @@ class ChildModel extends Equatable {
   final String pendidikan;
   final String role;
 
-  /// Semua jawaban kuesioner:
-  /// contoh:
-  /// 'pertanyaan1' -> 'Teks jawaban utama'
-  /// 'pertanyaan12' -> 'Tidak yakin'
-  /// 'pertanyaan12_detail' -> 'Karena ...'
-  /// plus:
-  /// 'hifz_an_nafs_score', 'hifz_an_nafs_category', 'hifz_an_nafs_video', dst.
+  /// Semua jawaban kuesioner
   final Map<String, String> pertanyaan;
 
   final List<String> harapan;
@@ -192,7 +188,7 @@ class ChildModel extends Equatable {
     return pertanyaan[questionId] ?? '-';
   }
 
-  /// Mendapatkan semua jawaban untuk Hifz tertentu
+  /// Mendapatkan semua jawaban untuk Hifz tertentu (format baru)
   List<Map<String, dynamic>> getHifzAnswers(String hifzKey) {
     final questions = getQuestionsForHifz(hifzKey);
     final answers = <Map<String, dynamic>>[];
@@ -234,53 +230,168 @@ class ChildModel extends Equatable {
     return (filled / total) * 100;
   }
 
-  /// Mendapatkan data lengkap Hifz
+  /// =========================
+  /// GETTERS untuk skor HIFZ berdasarkan sistem baru
+  /// =========================
+
+  int get hifzAnNafsScore {
+    final answers = getHifzAnswers('an_nafs');
+    return HifzScoringSystem.calculateScore(answers);
+  }
+
+  int get hifzAdDiinScore {
+    final answers = getHifzAnswers('ad_diin');
+    return HifzScoringSystem.calculateScore(answers);
+  }
+
+  int get hifzAlAqlScore {
+    final answers = getHifzAnswers('al_aql');
+    return HifzScoringSystem.calculateScore(answers);
+  }
+
+  int get hifzAnNaslScore {
+    final answers = getHifzAnswers('an_nasl');
+    return HifzScoringSystem.calculateScore(answers);
+  }
+
+  int get hifzAlMalScore {
+    final answers = getHifzAnswers('al_mal');
+    return HifzScoringSystem.calculateScore(answers);
+  }
+
+  /// GETTER untuk kategori berdasarkan sistem baru
+  String get hifzAnNafsCategory {
+    final score = hifzAnNafsScore;
+    return HifzScoringSystem.getCategory('an_nafs', score);
+  }
+
+  String get hifzAdDiinCategory {
+    final score = hifzAdDiinScore;
+    return HifzScoringSystem.getCategory('ad_diin', score);
+  }
+
+  String get hifzAlAqlCategory {
+    final score = hifzAlAqlScore;
+    return HifzScoringSystem.getCategory('al_aql', score);
+  }
+
+  String get hifzAnNaslCategory {
+    final score = hifzAnNaslScore;
+    return HifzScoringSystem.getCategory('an_nasl', score);
+  }
+
+  String get hifzAlMalCategory {
+    final score = hifzAlMalScore;
+    return HifzScoringSystem.getCategory('al_mal', score);
+  }
+
+  /// GETTER untuk video berdasarkan kategori baru
+  List<HifzVideo> get hifzAnNafsVideos {
+    final category = hifzAnNafsCategory;
+    return HifzScoringSystem.getVideos('an_nafs', category);
+  }
+
+  List<HifzVideo> get hifzAdDiinVideos {
+    final category = hifzAdDiinCategory;
+    return HifzScoringSystem.getVideos('ad_diin', category);
+  }
+
+  List<HifzVideo> get hifzAlAqlVideos {
+    final category = hifzAlAqlCategory;
+    return HifzScoringSystem.getVideos('al_aql', category);
+  }
+
+  List<HifzVideo> get hifzAnNaslVideos {
+    final category = hifzAnNaslCategory;
+    return HifzScoringSystem.getVideos('an_nasl', category);
+  }
+
+  List<HifzVideo> get hifzAlMalVideos {
+    final category = hifzAlMalCategory;
+    return HifzScoringSystem.getVideos('al_mal', category);
+  }
+
+  /// Mendapatkan data lengkap Hifz (format baru dengan video)
   Map<String, dynamic> getHifzData(String hifzKey) {
+    final scores = {
+      'an_nafs': hifzAnNafsScore,
+      'ad_diin': hifzAdDiinScore,
+      'al_aql': hifzAlAqlScore,
+      'an_nasl': hifzAnNaslScore,
+      'al_mal': hifzAlMalScore,
+    };
+
+    final categories = {
+      'an_nafs': hifzAnNafsCategory,
+      'ad_diin': hifzAdDiinCategory,
+      'al_aql': hifzAlAqlCategory,
+      'an_nasl': hifzAnNaslCategory,
+      'al_mal': hifzAlMalCategory,
+    };
+
+    final videos = {
+      'an_nafs': hifzAnNafsVideos,
+      'ad_diin': hifzAdDiinVideos,
+      'al_aql': hifzAlAqlVideos,
+      'an_nasl': hifzAnNaslVideos,
+      'al_mal': hifzAlMalVideos,
+    };
+
     final hifzMap = {
       'an_nafs': {
         'title': 'Hifz An-Nafs',
         'subtitle': 'Penjagaan Jiwa dan Keselamatan',
         'icon': Icons.health_and_safety,
         'color': Colors.red,
-        'score': hifzAnNafsScore,
-        'category': hifzAnNafsCategory,
-        'video': hifzAnNafsVideo,
+        'score': scores['an_nafs']!,
+        'category': categories['an_nafs']!,
+        'videos': videos['an_nafs']!,
+        'description': HifzScoringSystem.getCategoryDescription('an_nafs', categories['an_nafs']!),
+        'maxScore': HifzScoringSystem.getMaxScore('an_nafs'),
       },
       'ad_diin': {
         'title': 'Hifz Ad-Diin',
         'subtitle': 'Penjagaan Spiritual',
         'icon': Icons.mosque,
         'color': Colors.green,
-        'score': hifzAdDiinScore,
-        'category': hifzAdDiinCategory,
-        'video': hifzAdDiinVideo,
+        'score': scores['ad_diin']!,
+        'category': categories['ad_diin']!,
+        'videos': videos['ad_diin']!,
+        'description': HifzScoringSystem.getCategoryDescription('ad_diin', categories['ad_diin']!),
+        'maxScore': HifzScoringSystem.getMaxScore('ad_diin'),
       },
       'al_aql': {
         'title': 'Hifz Al-Aql',
         'subtitle': 'Penjagaan Akal dan Perkembangan',
         'icon': Icons.psychology,
         'color': Colors.purple,
-        'score': hifzAlAqlScore,
-        'category': hifzAlAqlCategory,
-        'video': hifzAlAqlVideo,
+        'score': scores['al_aql']!,
+        'category': categories['al_aql']!,
+        'videos': videos['al_aql']!,
+        'description': HifzScoringSystem.getCategoryDescription('al_aql', categories['al_aql']!),
+        'maxScore': HifzScoringSystem.getMaxScore('al_aql'),
       },
       'an_nasl': {
         'title': 'Hifz An-Nasl',
         'subtitle': 'Penjagaan Keturunan dan Pola Asuh',
         'icon': Icons.family_restroom,
         'color': Colors.orange,
-        'score': hifzAnNaslScore,
-        'category': hifzAnNaslCategory,
-        'video': hifzAnNaslVideo,
+        'score': scores['an_nasl']!,
+        'category': categories['an_nasl']!,
+        'videos': videos['an_nasl']!,
+        'description': HifzScoringSystem.getCategoryDescription('an_nasl', categories['an_nasl']!),
+        'maxScore': HifzScoringSystem.getMaxScore('an_nasl'),
       },
       'al_mal': {
         'title': 'Hifz Al-Mal',
         'subtitle': 'Penjagaan Ekonomi Keluarga',
         'icon': Icons.savings,
         'color': Colors.blue,
-        'score': hifzAlMalScore,
-        'category': hifzAlMalCategory,
-        'video': hifzAlMalVideo,
+        'score': scores['al_mal']!,
+        'category': categories['al_mal']!,
+        'videos': videos['al_mal']!,
+        'description': HifzScoringSystem.getCategoryDescription('al_mal', categories['al_mal']!),
+        'maxScore': HifzScoringSystem.getMaxScore('al_mal'),
       },
     };
 
@@ -290,63 +401,79 @@ class ChildModel extends Equatable {
     return data;
   }
 
-  // =========================
-  // HIFZ getters (dari pertanyaan)
-  // =========================
-
-  int _intFromPertanyaan(String key) {
-    return int.tryParse(pertanyaan[key] ?? '0') ?? 0;
+  /// Hitung total skor HIFZ (untuk overall category)
+  int get totalHifzScore {
+    return hifzAnNafsScore +
+        hifzAdDiinScore +
+        hifzAlAqlScore +
+        hifzAnNaslScore +
+        hifzAlMalScore;
   }
 
-  String _stringFromPertanyaan(String key, String defaultValue) {
-    return pertanyaan[key] ?? defaultValue;
+  /// Overall category berdasarkan rata-rata skor
+  String get hifzOverallCategory {
+    final scores = [
+      hifzAnNafsScore,
+      hifzAdDiinScore,
+      hifzAlAqlScore,
+      hifzAnNaslScore,
+      hifzAlMalScore,
+    ];
+
+    final maxScores = [
+      HifzScoringSystem.getMaxScore('an_nafs'),
+      HifzScoringSystem.getMaxScore('ad_diin'),
+      HifzScoringSystem.getMaxScore('al_aql'),
+      HifzScoringSystem.getMaxScore('an_nasl'),
+      HifzScoringSystem.getMaxScore('al_mal'),
+    ];
+
+    double totalPercentage = 0;
+
+    for (int i = 0; i < scores.length; i++) {
+      // Konversi ke persentase (skor rendah = baik, skor tinggi = buruk)
+      final percentage = 100 - (scores[i] / maxScores[i] * 100);
+      totalPercentage += percentage;
+    }
+
+    final avgPercentage = totalPercentage / scores.length;
+
+    if (avgPercentage >= 70) return 'Tinggi';
+    if (avgPercentage >= 40) return 'Sedang';
+    return 'Rendah';
   }
 
-  // Hifz An-Nafs
-  int get hifzAnNafsScore => _intFromPertanyaan('hifz_an_nafs_score');
-  String get hifzAnNafsCategory =>
-      _stringFromPertanyaan('hifz_an_nafs_category', 'Aman / risiko minimal');
-  String get hifzAnNafsVideo =>
-      _stringFromPertanyaan('hifz_an_nafs_video', '');
+  /// Warna untuk overall category
+  Color get hifzOverallColor {
+    final category = hifzOverallCategory;
+    if (category == 'Tinggi') return Colors.green;
+    if (category == 'Sedang') return Colors.orange;
+    return Colors.red;
+  }
 
-  // Hifz Ad-Diin
-  int get hifzAdDiinScore => _intFromPertanyaan('hifz_ad_diin_score');
-  String get hifzAdDiinCategory =>
-      _stringFromPertanyaan('hifz_ad_diin_category', 'Kesejahteraan Spiritual');
-  String get hifzAdDiinVideo =>
-      _stringFromPertanyaan('hifz_ad_diin_video', '');
+  /// Progress value untuk overall (0-1)
+  double get hifzOverallProgress {
+    final totalMaxScore = HifzScoringSystem.getMaxScore('an_nafs') +
+        HifzScoringSystem.getMaxScore('ad_diin') +
+        HifzScoringSystem.getMaxScore('al_aql') +
+        HifzScoringSystem.getMaxScore('an_nasl') +
+        HifzScoringSystem.getMaxScore('al_mal');
 
-  // Hifz Al-Aql
-  int get hifzAlAqlScore => _intFromPertanyaan('hifz_al_aql_score');
-  String get hifzAlAqlCategory =>
-      _stringFromPertanyaan('hifz_al_aql_category', 'Perkembangan baik');
-  String get hifzAlAqlVideo =>
-      _stringFromPertanyaan('hifz_al_aql_video', '');
+    return totalHifzScore / totalMaxScore;
+  }
 
-  // Hifz An-Nasl
-  int get hifzAnNaslScore => _intFromPertanyaan('hifz_an_nasl_score');
-  String get hifzAnNaslCategory =>
-      _stringFromPertanyaan('hifz_an_nasl_category', 'Pola asuh baik');
-  String get hifzAnNaslVideo =>
-      _stringFromPertanyaan('hifz_an_nasl_video', '');
+  /// Mendapatkan semua video rekomendasi untuk semua HIFZ
+  List<HifzVideo> getAllHifzVideos() {
+    final allVideos = <HifzVideo>[];
+    allVideos.addAll(hifzAnNafsVideos);
+    allVideos.addAll(hifzAdDiinVideos);
+    allVideos.addAll(hifzAlAqlVideos);
+    allVideos.addAll(hifzAnNaslVideos);
+    allVideos.addAll(hifzAlMalVideos);
+    return allVideos;
+  }
 
-  // Hifz Al-Mal
-  int get hifzAlMalScore => _intFromPertanyaan('hifz_al_mal_score');
-  String get hifzAlMalCategory =>
-      _stringFromPertanyaan('hifz_al_mal_category', 'Kecukupan ekonomi baik');
-  String get hifzAlMalVideo =>
-      _stringFromPertanyaan('hifz_al_mal_video', '');
-
-  /// (Opsional) total skor HIFZ gabungan
-  int get totalHifzScore =>
-      hifzAnNafsScore +
-          hifzAdDiinScore +
-          hifzAlAqlScore +
-          hifzAnNaslScore +
-          hifzAlMalScore;
-
-  /// Hitung skor dari semua jawaban utama (key tanpa suffix `_detail`)
-  /// NOTE: ini generic, tidak pakai logika HIFZ di AddChildPage
+  /// Hitung skor dari semua jawaban utama (untuk backward compatibility)
   int calculateScore() {
     int score = 0;
 
