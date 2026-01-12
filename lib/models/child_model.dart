@@ -78,6 +78,17 @@ class ChildModel extends Equatable {
       );
     }
 
+    debugPrint('[ChildModel] Membaca data anak: ${json['name']}');
+
+    final pertanyaan = json['pertanyaan'] as Map<String, dynamic>? ?? {};
+    debugPrint('Jumlah pertanyaan: ${pertanyaan.length}');
+
+    // Cek field HIFZ
+    ['hifz_an_nafs_score', 'hifz_ad_diin_score', 'hifz_an_nafs_category', 'total_hifz_score']
+        .forEach((key) {
+      debugPrint('  $key: ${pertanyaan[key] ?? "NOT FOUND"}');
+    });
+
     return ChildModel(
       id: id,
       parentId: json['parentId']?.toString() ?? '',
@@ -235,54 +246,109 @@ class ChildModel extends Equatable {
   /// =========================
 
   int get hifzAnNafsScore {
-    final answers = getHifzAnswers('an_nafs');
-    return HifzScoringSystem.calculateScore(answers);
+    // SELALU ambil dari Firestore, jangan pernah hitung ulang
+    final savedScore = pertanyaan['hifz_an_nafs_score'];
+    if (savedScore != null && savedScore.isNotEmpty) {
+      return int.tryParse(savedScore) ?? 0;
+    }
+    return 0; // JANGAN panggil HifzScoringSystem.calculateScore()
   }
 
   int get hifzAdDiinScore {
-    final answers = getHifzAnswers('ad_diin');
-    return HifzScoringSystem.calculateScore(answers);
+    final savedScore = pertanyaan['hifz_ad_diin_score'];
+    if (savedScore != null && savedScore.isNotEmpty) {
+      return int.tryParse(savedScore) ?? 0;
+    }
+    return 0;
   }
 
   int get hifzAlAqlScore {
-    final answers = getHifzAnswers('al_aql');
-    return HifzScoringSystem.calculateScore(answers);
+    final savedScore = pertanyaan['hifz_al_aql_score'];
+    if (savedScore != null && savedScore.isNotEmpty) {
+      return int.tryParse(savedScore) ?? 0;
+    }
+    return 0;
   }
 
   int get hifzAnNaslScore {
-    final answers = getHifzAnswers('an_nasl');
-    return HifzScoringSystem.calculateScore(answers);
+    final savedScore = pertanyaan['hifz_an_nasl_score'];
+    if (savedScore != null && savedScore.isNotEmpty) {
+      return int.tryParse(savedScore) ?? 0;
+    }
+    return 0;
   }
 
   int get hifzAlMalScore {
-    final answers = getHifzAnswers('al_mal');
-    return HifzScoringSystem.calculateScore(answers);
+    final savedScore = pertanyaan['hifz_al_mal_score'];
+    if (savedScore != null && savedScore.isNotEmpty) {
+      return int.tryParse(savedScore) ?? 0;
+    }
+    return 0;
   }
 
-  /// GETTER untuk kategori berdasarkan sistem baru
+  /// GETTER untuk kategori HIFZ berdasarkan data yang sudah disimpan
   String get hifzAnNafsCategory {
+    // Selalu ambil dari Firestore
+    final savedCategory = pertanyaan['hifz_an_nafs_category'];
+    if (savedCategory != null && savedCategory.isNotEmpty) {
+      return savedCategory;
+    }
+
+    // Jika tidak ada di Firestore, hitung dari skor yang ada (bukan dari HifzScoringSystem)
     final score = hifzAnNafsScore;
-    return HifzScoringSystem.getCategory('an_nafs', score);
+
+    // Gunakan logika sederhana yang konsisten dengan ChildCubit
+    if (score <= 4) return 'Aman / risiko minimal';
+    if (score <= 8) return 'Risiko sedang';
+    return 'Risiko tinggi / perlu intervensi segera';
   }
 
   String get hifzAdDiinCategory {
+    final savedCategory = pertanyaan['hifz_ad_diin_category'];
+    if (savedCategory != null && savedCategory.isNotEmpty) {
+      return savedCategory;
+    }
+
     final score = hifzAdDiinScore;
-    return HifzScoringSystem.getCategory('ad_diin', score);
+    if (score <= 3) return 'Kesejahteraan Spiritual';
+    if (score <= 7) return 'Risiko Distres Spiritual';
+    return 'Distres Spiritual';
   }
 
   String get hifzAlAqlCategory {
+    final savedCategory = pertanyaan['hifz_al_aql_category'];
+    if (savedCategory != null && savedCategory.isNotEmpty) {
+      return savedCategory;
+    }
+
     final score = hifzAlAqlScore;
-    return HifzScoringSystem.getCategory('al_aql', score);
+    if (score <= 3) return 'Perkembangan baik';
+    if (score <= 6) return 'Risiko keterlambatan / stimulasi kurang';
+    return 'Gangguan perkembangan / butuh evaluasi lanjutan';
   }
 
   String get hifzAnNaslCategory {
+    final savedCategory = pertanyaan['hifz_an_nasl_category'];
+    if (savedCategory != null && savedCategory.isNotEmpty) {
+      return savedCategory;
+    }
+
     final score = hifzAnNaslScore;
-    return HifzScoringSystem.getCategory('an_nasl', score);
+    if (score <= 4) return 'Pola asuh baik';
+    if (score <= 8) return 'Risiko pola asuh tidak adekuat';
+    return 'Pola asuh buruk / risiko perlakuan salah';
   }
 
   String get hifzAlMalCategory {
+    final savedCategory = pertanyaan['hifz_al_mal_category'];
+    if (savedCategory != null && savedCategory.isNotEmpty) {
+      return savedCategory;
+    }
+
     final score = hifzAlMalScore;
-    return HifzScoringSystem.getCategory('al_mal', score);
+    if (score <= 3) return 'Kecukupan ekonomi baik';
+    if (score <= 6) return 'Risiko ketidakcukupan ekonomi';
+    return 'Ketidakcukupan berat / perlu rujukan sosial';
   }
 
   /// GETTER untuk video berdasarkan kategori baru
@@ -401,8 +467,15 @@ class ChildModel extends Equatable {
     return data;
   }
 
-  /// Hitung total skor HIFZ (untuk overall category)
+  /// Hitung total skor HIFZ dari data yang sudah disimpan
   int get totalHifzScore {
+    // Coba ambil dari total yang sudah disimpan
+    final savedTotal = pertanyaan['total_hifz_score'];
+    if (savedTotal != null && savedTotal.isNotEmpty) {
+      return int.tryParse(savedTotal) ?? 0;
+    }
+
+    // Jika tidak ada, hitung dari masing-masing skor
     return hifzAnNafsScore +
         hifzAdDiinScore +
         hifzAlAqlScore +
@@ -473,57 +546,110 @@ class ChildModel extends Equatable {
     return allVideos;
   }
 
-  /// Hitung skor dari semua jawaban utama (untuk backward compatibility)
+  /// Di ChildModel.dart, tambahkan:
   int calculateScore() {
-    int score = 0;
-
-    pertanyaan.forEach((key, value) {
-      if (!key.endsWith('_detail') && !key.startsWith('hifz_')) {
-        score += _getScoreForAnswer(value);
-      }
-    });
-
-    return score;
-  }
-
-  int _getScoreForAnswer(String answer) {
-    final a = answer.toLowerCase().trim();
-
-    // Jawaban sangat positif
-    if (a.startsWith('ya') ||
-        a.contains('yakin') ||
-        a.contains('mengetahui') ||
-        a.contains('tahu') ||
-        a.contains('mandiri') ||
-        a.contains('mampu') ||
-        a.contains('tercukupi') ||
-        a.contains('ketetapan dari allah') ||
-        a.contains('ke pelayanan kesehatan') ||
-        a.contains('jalan allah')) {
-      return 5;
-    }
-
-    // Jawaban sedang
-    if (a.contains('kadang') ||
-        a.contains('sebagian') ||
-        a.contains('pernah')) {
-      return 3;
-    }
-
-    // Jawaban negatif
-    if (a.contains('tidak') || a.contains('belum')) {
-      return 0;
-    }
-
-    // default
-    return 0;
+    // Kembalikan total skor HIFZ yang sudah dihitung
+    return totalHifzScore;
   }
 
   String determineCategory(int score) {
-    if (score >= 80) return 'Tinggi';
-    if (score >= 60) return 'Sedang';
-    return 'Rendah';
+    // Kembalikan kategori overall HIFZ
+    return hifzOverallCategory;
   }
+
+  // Di ChildModel.dart, tambahkan method untuk debug:
+  void debugHifzScores() {
+    debugPrint('=== DEBUG HIFZ SCORES ===');
+    debugPrint('Nama: $name');
+
+    // Skor dari Firestore
+    debugPrint('Skor dari Firestore:');
+    debugPrint('  hifz_an_nafs_score: ${pertanyaan['hifz_an_nafs_score']}');
+    debugPrint('  hifz_ad_diin_score: ${pertanyaan['hifz_ad_diin_score']}');
+    debugPrint('  hifz_al_aql_score: ${pertanyaan['hifz_al_aql_score']}');
+    debugPrint('  hifz_an_nasl_score: ${pertanyaan['hifz_an_nasl_score']}');
+    debugPrint('  hifz_al_mal_score: ${pertanyaan['hifz_al_mal_score']}');
+    debugPrint('  total_hifz_score: ${pertanyaan['total_hifz_score']}');
+
+    // Skor yang dihitung
+    debugPrint('Skor yang dihitung:');
+    debugPrint('  hifzAnNafsScore: $hifzAnNafsScore');
+    debugPrint('  hifzAdDiinScore: $hifzAdDiinScore');
+    debugPrint('  hifzAlAqlScore: $hifzAlAqlScore');
+    debugPrint('  hifzAnNaslScore: $hifzAnNaslScore');
+    debugPrint('  hifzAlMalScore: $hifzAlMalScore');
+    debugPrint('  totalHifzScore: $totalHifzScore');
+
+    // Kategori dari Firestore
+    debugPrint('Kategori dari Firestore:');
+    debugPrint('  hifz_an_nafs_category: ${pertanyaan['hifz_an_nafs_category']}');
+    debugPrint('  hifz_ad_diin_category: ${pertanyaan['hifz_ad_diin_category']}');
+    debugPrint('  hifz_al_aql_category: ${pertanyaan['hifz_al_aql_category']}');
+    debugPrint('  hifz_an_nasl_category: ${pertanyaan['hifz_an_nasl_category']}');
+    debugPrint('  hifz_al_mal_category: ${pertanyaan['hifz_al_mal_category']}');
+    debugPrint('  hifz_overall_category: ${pertanyaan['hifz_overall_category']}');
+
+    // Kategori yang dihitung
+    debugPrint('Kategori yang dihitung:');
+    debugPrint('  hifzAnNafsCategory: $hifzAnNafsCategory');
+    debugPrint('  hifzAdDiinCategory: $hifzAdDiinCategory');
+    debugPrint('  hifzAlAqlCategory: $hifzAlAqlCategory');
+    debugPrint('  hifzAnNaslCategory: $hifzAnNaslCategory');
+    debugPrint('  hifzAlMalCategory: $hifzAlMalCategory');
+    debugPrint('  hifzOverallCategory: $hifzOverallCategory');
+  }
+
+  /// Hitung skor dari semua jawaban utama (untuk backward compatibility)
+  // int calculateScore() {
+  //   int score = 0;
+  //
+  //   pertanyaan.forEach((key, value) {
+  //     if (!key.endsWith('_detail') && !key.startsWith('hifz_')) {
+  //       score += _getScoreForAnswer(value);
+  //     }
+  //   });
+  //
+  //   return score;
+  // }
+  //
+  // int _getScoreForAnswer(String answer) {
+  //   final a = answer.toLowerCase().trim();
+  //
+  //   // Jawaban sangat positif
+  //   if (a.startsWith('ya') ||
+  //       a.contains('yakin') ||
+  //       a.contains('mengetahui') ||
+  //       a.contains('tahu') ||
+  //       a.contains('mandiri') ||
+  //       a.contains('mampu') ||
+  //       a.contains('tercukupi') ||
+  //       a.contains('ketetapan dari allah') ||
+  //       a.contains('ke pelayanan kesehatan') ||
+  //       a.contains('jalan allah')) {
+  //     return 5;
+  //   }
+  //
+  //   // Jawaban sedang
+  //   if (a.contains('kadang') ||
+  //       a.contains('sebagian') ||
+  //       a.contains('pernah')) {
+  //     return 3;
+  //   }
+  //
+  //   // Jawaban negatif
+  //   if (a.contains('tidak') || a.contains('belum')) {
+  //     return 0;
+  //   }
+  //
+  //   // default
+  //   return 0;
+  // }
+  //
+  // String determineCategory(int score) {
+  //   if (score >= 80) return 'Tinggi';
+  //   if (score >= 60) return 'Sedang';
+  //   return 'Rendah';
+  // }
 
   @override
   List<Object?> get props => [

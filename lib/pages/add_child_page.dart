@@ -334,132 +334,143 @@ class _AddChildPageState extends State<AddChildPage> {
   // =======================
 
   /// Skor per jawaban (0–2) untuk setiap pertanyaan pilihan ganda.
+  /// Skor per jawaban (0–2) untuk setiap pertanyaan pilihan ganda.
+  /// Skor tinggi = lebih buruk, skor rendah = lebih baik
   int _scoreForAnswer(_QuestionConfig q, String? answer) {
     if (answer == null || answer.isEmpty || q.type != QuestionType.choice) {
       return 0;
     }
 
     switch (q.id) {
-      // ===== HIFZ AN-NAFS (pageIndex 1) =====
+    // ===== HIFZ AN-NAFS (pageIndex 1) =====
       case 'pertanyaan5': // alergi obat
       case 'pertanyaan6': // alergi makanan
+      case 'pertanyaan11': // masalah makan
+      // "Tidak ada" = baik (0), "Ada" = buruk (2)
         return answer == 'Tidak ada' ? 0 : 2;
 
       case 'pertanyaan9': // porsi makan
+      // "Selalu habis" = baik (0), "Sering tidak habis" = buruk (2)
         if (answer == 'Selalu habis') return 0;
         if (answer == 'Sebagian') return 1;
-        return 2; // Sering tidak habis
+        return 2; // "Sering tidak habis"
 
       case 'pertanyaan10': // kebiasaan/pantangan makan
-        return answer == 'Tidak ada' ? 0 : 1; // pantangan = hambatan ringan
+        return answer == 'Tidak ada' ? 0 : 1; // "Ada" = hambatan ringan
 
-      case 'pertanyaan11': // masalah makan
-        return answer == 'Tidak ada' ? 0 : 2;
-
-      // ===== HIFZ AD-DIIN (pageIndex 2) =====
+    // ===== HIFZ AD-DIIN (pageIndex 2) =====
       case 'pertanyaan12': // yakin Allah sembuhkan
       case 'pertanyaan13': // yakin Allah bersama saya
+      // "Yakin" = baik (0), "Tidak yakin" = buruk (2)
         return answer == 'Yakin' ? 0 : 2;
 
       case 'pertanyaan14': // kesulitan sholat
-        return answer == 'Tidak' ? 0 : 2; // Tidak = tidak ada masalah
+      // "Tidak" = baik (0), "Ya" = buruk (2)
+        return answer == 'Tidak' ? 0 : 2;
 
       case 'pertanyaan15': // tahu cara sholat saat sakit
+      // "Mengerti" = baik (0), "Tidak mengerti" = buruk (2)
         return answer == 'Mengerti' ? 0 : 2;
 
       case 'pertanyaan16': // perlu pendampingan sholat
-        return answer == 'Tidak' ? 0 : 1; // butuh bantuan = 1
+      // "Tidak" = mandiri (0), "Ya" = butuh bantuan (1)
+        return answer == 'Tidak' ? 0 : 1;
 
       case 'pertanyaan17': // cara sholat (derajat kemampuan)
+      // "Berdiri" = kemampuan terbaik (0), makin turun makin tinggi skornya
         if (answer == 'Berdiri') return 0;
         if (answer == 'Duduk') return 1;
-        return 2; // bentuk lain = keterbatasan lebih berat
+        return 2; // bentuk lain = keterbatasan berat
 
       case 'pertanyaan18': // mampu tayamum
+      // "Mampu" = baik (0), "Tidak mampu" = buruk (2)
         return answer == 'Mampu' ? 0 : 2;
 
       case 'pertanyaan19': // perlu bantuan tayamum
+      // "Mandiri" = baik (0), "Butuh bantuan" = ringan (1)
         return answer == 'Mandiri' ? 0 : 1;
 
-      // ===== HIFZ AL-‘AQL (pageIndex 3) =====
-      case 'pertanyaan20':
-      case 'pertanyaan24':
-      case 'pertanyaan25':
-      case 'pertanyaan26':
-        // Mengetahui = sejahtera, Tidak mengetahui = masalah
+    // ===== HIFZ AL-‘AQL (pageIndex 3) =====
+      case 'pertanyaan20': // tahu sakit = ujian Allah
+      case 'pertanyaan24': // tahu kebutuhan ibadah saat sakit
+      case 'pertanyaan25': // tahu ada hikmah saat sakit
+      case 'pertanyaan26': // tahu ada larangan dalam Islam saat sakit
+      // "Mengetahui" = baik (0), "Tidak mengetahui" = buruk (2)
         return answer == 'Mengetahui' ? 0 : 2;
 
-      case 'pertanyaan21':
+      case 'pertanyaan21': // sehat dan sakit berasal dari
+      // "Ketetapan dari Allah SWT" = benar (0), lainnya salah (2)
         return answer == 'Ketetapan dari Allah SWT' ? 0 : 2;
 
-      case 'pertanyaan22':
-        return answer ==
-                'Menempuh jalur medis sebagai ikhtiar dan tetap pasrah pada Allah SWT'
-            ? 0
-            : 2;
+      case 'pertanyaan22': // pengobatan yang dilakukan
+      // "Segera datang... ke pelayanan kesehatan" = benar (0), lainnya (2)
+        return answer.startsWith('Segera datang melakukan') ? 0 : 2;
 
-      case 'pertanyaan23':
-        return answer == 'Yakin bahwa pengobatan medis adalah jalan Allah SWT'
-            ? 0
-            : 2;
+      case 'pertanyaan23': // yakin dengan pengobatan medis
+      // "Yakin bahwa pengobatan medis adalah jalan Allah SWT" = benar (0), lainnya (2)
+        return answer == 'Yakin bahwa pengobatan medis adalah jalan Allah SWT' ? 0 : 2;
 
-      // ===== HIFZ AN-NASL (pageIndex 4) =====
-      case 'pertanyaan27':
+    // ===== HIFZ AN-NASL (pageIndex 4) =====
+      case 'pertanyaan27': // keluarga yakin sehat sakit dari Allah
+      // "Yakin" = baik (0), "Tidak yakin" = buruk (2)
         return answer == 'Yakin' ? 0 : 2;
 
-      case 'pertanyaan28':
+      case 'pertanyaan28': // menurut keluarga sakit berasal dari
+      // "Dari Allah SWT" = benar (0), "Dari hal lain" = salah (2)
         return answer == 'Dari Allah SWT' ? 0 : 2;
 
-      case 'pertanyaan29':
-        return answer == 'Ke pelayanan kesehatan sebagai bentuk ikhtiar dan doa'
-            ? 0
-            : 2;
+      case 'pertanyaan29': // ketika sakit keluarga mencari pengobatan
+      // "Ke pelayanan kesehatan..." = benar (0), "Tidak ke medis" = salah (2)
+        return answer == 'Ke pelayanan kesehatan sebagai bentuk ikhtiar dan doa' ? 0 : 2;
 
-      case 'pertanyaan30':
-      case 'pertanyaan31':
-      case 'pertanyaan33':
-      case 'pertanyaan36':
-      case 'pertanyaan38':
-        // Ya = baik, Tidak = masalah
-        return answer.startsWith('Ya') ? 0 : 2;
+      case 'pertanyaan30': // orang tua membantu berdoa
+      case 'pertanyaan31': // orang tua membantu sholat
+      case 'pertanyaan32': // orang tua menanamkan sholat/doa
+      case 'pertanyaan33': // diperdengarkan Al-Qur'an
+      case 'pertanyaan36': // orang tua ingatkan kebersihan
+      case 'pertanyaan38': // orang tua jelaskan perubahan tubuh
+      case 'pertanyaan39': // merasa aman dirawat
+      // "Ya" atau "Ya, menanamkan" = baik (0), "Tidak" = buruk (2)
+        return answer == 'Ya' || answer == 'Ya, menanamkan' ? 0 : 2;
 
-      case 'pertanyaan32':
-        return answer == 'Ya, menanamkan' ? 0 : 2;
-
-      case 'pertanyaan34':
-      case 'pertanyaan35':
-      case 'pertanyaan37':
+      case 'pertanyaan34': // tahu tubuh harus dijaga
+      case 'pertanyaan35': // tahu bagian tubuh yang tidak boleh disentuh
+      case 'pertanyaan37': // tahu perubahan tubuh normal
+      // "Tahu" = baik (0), "Tidak tahu" = buruk (2)
         return answer == 'Tahu' ? 0 : 2;
 
-      case 'pertanyaan39':
-        return answer == 'Ya' ? 0 : 2;
-
-      // ===== HIFZ AL-MAL (pageIndex 5) =====
-      case 'pertanyaan40':
-        if (answer == 'Tidak ada sumber tetap') return 2;
+    // ===== HIFZ AL-MAL (pageIndex 5) =====
+      case 'pertanyaan40': // orang yang bekerja dalam keluarga
+      // "Ayah" = ideal (0), "Tidak ada sumber tetap" = terburuk (2)
+        if (answer == 'Ayah' || answer == 'Ibu') return 0;
         if (answer == 'Anggota keluarga lain') return 1;
-        return 0; // Ayah / Ibu
+        return 2; // "Tidak ada sumber tetap"
 
-      case 'pertanyaan41':
+      case 'pertanyaan41': // kebutuhan makan tercukupi
+      // "Ya, tercukupi" = baik (0), "Tidak tercukupi" = buruk (2)
         return answer == 'Ya, tercukupi' ? 0 : 2;
 
-      case 'pertanyaan42':
+      case 'pertanyaan42': // orang tua bekerja sebagai
+      // Semua pekerjaan = 0, "Tidak bekerja" = buruk (2)
         return answer == 'Tidak bekerja' ? 2 : 0;
 
-      case 'pertanyaan43':
-        // kegiatan menghasilkan uang -> di sini dianggap netral (tidak dipakai skor)
-        return 0;
+      case 'pertanyaan43': // kegiatan lain yang menghasilkan uang
+      // "Tidak ada" = normal (0), "Ada" = buruk (2) - karena anak harusnya fokus sekolah
+        return answer == 'Tidak ada' ? 0 : 2;
 
-      case 'pertanyaan44':
+      case 'pertanyaan44': // memiliki asuransi
+      // "Tidak memiliki" = buruk (2), lainnya = baik (0)
         return answer == 'Tidak memiliki' ? 2 : 0;
 
-      case 'pertanyaan45':
+      case 'pertanyaan45': // orang tua mengeluh biaya rumah sakit
+      // "Tidak ada" = baik (0), "Ada" = buruk (2)
         return answer == 'Tidak ada' ? 0 : 2;
 
       default:
         return 0;
     }
   }
+
 
   Future<void> _save() async {
     if (_isLoading) return;
@@ -518,28 +529,6 @@ class _AddChildPageState extends State<AddChildPage> {
       _isLoading = true;
     });
 
-    // Cek username unik
-    // try {
-    //   final isUsernameAvailable = await _childAuthService.isUsernameAvailable(
-    //     username,
-    //   );
-    //   if (!isUsernameAvailable) {
-    //     setState(() {
-    //       _error = 'Username "$username" sudah digunakan';
-    //       _isLoading = false;
-    //     });
-    //     _pageController.jumpToPage(0);
-    //     return;
-    //   }
-    // } catch (e) {
-    //   setState(() {
-    //     _error = 'Gagal memeriksa username: $e';
-    //     _isLoading = false;
-    //   });
-    //   _pageController.jumpToPage(0);
-    //   return;
-    // }
-
     // Susun map pertanyaan
     final Map<String, String> pertanyaan = {};
     for (final q in _questions) {
@@ -553,39 +542,8 @@ class _AddChildPageState extends State<AddChildPage> {
       }
     }
 
-    // Hitung skor, kategori, dan rekomendasi video per HIFZ (revisi klien)
-    final hifzResults = _calculateHifzResults();
 
-    final hNafs = hifzResults['nafs']!;
-    final hDiin = hifzResults['diin']!;
-    final hAql = hifzResults['aql']!;
-    final hNasl = hifzResults['nasl']!;
-    final hMal = hifzResults['mal']!;
-
-    // Masukkan ke map pertanyaan (bisa dibaca backend untuk diagnosa & video)
-    pertanyaan.addAll({
-      'hifz_an_nafs_score': hNafs.score.toString(),
-      'hifz_an_nafs_category': hNafs.category,
-      'hifz_an_nafs_video': hNafs.videoSuggestion,
-
-      'hifz_ad_diin_score': hDiin.score.toString(),
-      'hifz_ad_diin_category': hDiin.category,
-      'hifz_ad_diin_video': hDiin.videoSuggestion,
-
-      'hifz_al_aql_score': hAql.score.toString(),
-      'hifz_al_aql_category': hAql.category,
-      'hifz_al_aql_video': hAql.videoSuggestion,
-
-      'hifz_an_nasl_score': hNasl.score.toString(),
-      'hifz_an_nasl_category': hNasl.category,
-      'hifz_an_nasl_video': hNasl.videoSuggestion,
-
-      'hifz_al_mal_score': hMal.score.toString(),
-      'hifz_al_mal_category': hMal.category,
-      'hifz_al_mal_video': hMal.videoSuggestion,
-    });
-
-    // Kirim ke Cubit
+    // Kirim ke Cubit DENGAN PARAMETER HIFZ
     context.read<ChildCubit>().addChild(
       parentId: widget.parentId,
       name: name,
@@ -595,7 +553,8 @@ class _AddChildPageState extends State<AddChildPage> {
       jenisKelamin: selectedGender!,
       pendidikan: pendidikan,
       pertanyaan: pertanyaan,
-      harapan: selectedHarapan, // kalau tidak dipakai, tetap aman
+      harapan: selectedHarapan,
+
     );
   }
 
@@ -865,7 +824,7 @@ class _AddChildPageState extends State<AddChildPage> {
               ],
             ),
             child: DropdownButtonFormField<String>(
-              value: selectedGender,
+              initialValue: selectedGender,
               decoration: InputDecoration(
                 labelText: 'Jenis Kelamin',
                 prefixIcon: Icon(Icons.wc, color: Colors.blue.shade400),

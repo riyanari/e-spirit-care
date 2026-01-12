@@ -242,24 +242,42 @@ class _ChildDashboardContentState extends State<_ChildDashboardContent> {
   }
 
   void _initializeData() {
-    // Ambil data dari ChildModel
-    hifzNafsScore = widget.child.hifzAnNafsScore;
-    hifzDiinScore = widget.child.hifzAdDiinScore;
-    hifzAqlScore = widget.child.hifzAlAqlScore;
-    hifzNaslScore = widget.child.hifzAnNaslScore;
-    hifzMalScore = widget.child.hifzAlMalScore;
+    // **PERBAIKAN: Ambil data langsung dari Firestore seperti di VideoRecommendationsPage**
+    final pertanyaan = widget.child.pertanyaan;
 
-    hifzNafsCategory = widget.child.hifzAnNafsCategory;
-    hifzDiinCategory = widget.child.hifzAdDiinCategory;
-    hifzAqlCategory = widget.child.hifzAlAqlCategory;
-    hifzNaslCategory = widget.child.hifzAnNaslCategory;
-    hifzMalCategory = widget.child.hifzAlMalCategory;
+    hifzNafsScore = int.tryParse(pertanyaan['hifz_an_nafs_score'] ?? '0') ?? 0;
+    hifzDiinScore = int.tryParse(pertanyaan['hifz_ad_diin_score'] ?? '0') ?? 0;
+    hifzAqlScore = int.tryParse(pertanyaan['hifz_al_aql_score'] ?? '0') ?? 0;
+    hifzNaslScore = int.tryParse(pertanyaan['hifz_an_nasl_score'] ?? '0') ?? 0;
+    hifzMalScore = int.tryParse(pertanyaan['hifz_al_mal_score'] ?? '0') ?? 0;
 
-    totalScore = widget.child.totalHifzScore;
-    overallCategory = widget.child.hifzOverallCategory;
+    hifzNafsCategory = pertanyaan['hifz_an_nafs_category'] ?? 'Belum dinilai';
+    hifzDiinCategory = pertanyaan['hifz_ad_diin_category'] ?? 'Belum dinilai';
+    hifzAqlCategory = pertanyaan['hifz_al_aql_category'] ?? 'Belum dinilai';
+    hifzNaslCategory = pertanyaan['hifz_an_nasl_category'] ?? 'Belum dinilai';
+    hifzMalCategory = pertanyaan['hifz_al_mal_category'] ?? 'Belum dinilai';
+
+    // **PERBAIKAN: Hitung ulang total score dan kategori**
+    totalScore = hifzNafsScore + hifzDiinScore + hifzAqlScore + hifzNaslScore + hifzMalScore;
+    overallCategory = _calculateOverallCategoryFor74(totalScore);
+
+    // **DEBUG: Tampilkan perbedaan**
+    debugPrint('=== Dashboard Data ===');
+    debugPrint('Total Score: $totalScore');
+    debugPrint('Kategori dari Firestore: ${pertanyaan['hifz_overall_category']}');
+    debugPrint('Kategori dihitung: $overallCategory');
 
     recommendations = videoService.getVideoRecommendations(widget.child);
     hasPrayerReminder = _checkPrayerReminder();
+  }
+
+// **TAMBAHKAN METHOD INI (sama seperti di VideoRecommendationsPage)**
+  String _calculateOverallCategoryFor74(int totalScore) {
+    // Total maksimal = 74 poin
+    // Kategori berdasarkan skor (skor rendah = baik):
+    if (totalScore <= 14) return 'Baik';           // 0-14 poin (19% dari 74)
+    if (totalScore <= 29) return 'Perhatian';      // 15-29 poin (20-39% dari 74)
+    return 'Perlu Intervensi';                     // 30+ poin (40%+ dari 74)
   }
 
   Future<void> _loadExistingHifzDiagnoses() async {
@@ -810,13 +828,14 @@ class _ChildDashboardContentState extends State<_ChildDashboardContent> {
   }
 
   Widget _buildScoreCard(int totalScore, String category) {
+    // **PERBAIKAN: Pastikan category adalah yang dihitung ulang (overallCategory)**
     Color getCategoryColor() {
       switch (category) {
-        case 'Tinggi':
+        case 'Baik':
           return Colors.green;
-        case 'Sedang':
+        case 'Perhatian':
           return Colors.orange;
-        case 'Rendah':
+        case 'Perlu Intervensi':
           return Colors.red;
         default:
           return kPrimaryColor;
@@ -825,12 +844,12 @@ class _ChildDashboardContentState extends State<_ChildDashboardContent> {
 
     String getCategoryDescription() {
       switch (category) {
-        case 'Tinggi':
-          return 'Perkembangan aspek HIFZ anak relatif baik. Pertahankan! 🎉';
-        case 'Sedang':
-          return 'Ada beberapa area yang perlu ditingkatkan. Tetap semangat mendampingi anak 💪';
-        case 'Rendah':
-          return 'Perlu perhatian lebih pada aspek spiritual, jiwa, pola asuh, atau ekonomi. 🌱';
+        case 'Baik':
+          return 'Perkembangan aspek HIFZ anak relatif baik (skor ≤14). Pertahankan! 🎉';
+        case 'Perhatian':
+          return 'Ada beberapa area yang perlu ditingkatkan (skor 15-29). Tetap semangat mendampingi anak 💪';
+        case 'Perlu Intervensi':
+          return 'Perlu perhatian lebih pada aspek spiritual, jiwa, pola asuh, atau ekonomi (skor ≥30). 🌱';
         default:
           return '';
       }
@@ -838,11 +857,11 @@ class _ChildDashboardContentState extends State<_ChildDashboardContent> {
 
     IconData getCategoryIcon() {
       switch (category) {
-        case 'Tinggi':
+        case 'Baik':
           return Icons.emoji_events_rounded;
-        case 'Sedang':
+        case 'Perhatian':
           return Icons.trending_up_rounded;
-        case 'Rendah':
+        case 'Perlu Intervensi':
           return Icons.lightbulb_outline_rounded;
         default:
           return Icons.assessment_rounded;
@@ -971,12 +990,12 @@ class _ChildDashboardContentState extends State<_ChildDashboardContent> {
 
   String _getLevel(String category) {
     switch (category) {
-      case 'Tinggi':
-        return 'Lanjutan';
-      case 'Sedang':
+      case 'Baik':
+        return 'Optimal';
+      case 'Perhatian':
         return 'Menengah';
-      case 'Rendah':
-        return 'Dasar';
+      case 'Perlu Intervensi':
+        return 'Perlu Bantuan';
       default:
         return '-';
     }
@@ -1379,11 +1398,11 @@ class _ChildDashboardContentState extends State<_ChildDashboardContent> {
 
   Color _getCategoryColor(String category) {
     switch (category) {
-      case 'Aman':
+      case 'Baik':
         return Colors.green;
       case 'Perhatian':
         return Colors.orange;
-      case 'Risiko':
+      case 'Perlu Intervensi':
         return Colors.red;
       default:
         return Colors.grey;
@@ -1708,12 +1727,15 @@ class _ChildDashboardContentState extends State<_ChildDashboardContent> {
   }
 
   Widget _buildHifzDetailStat(String title, String value, IconData icon, Color color) {
+    // Gunakan _getCategoryColor() untuk kategori
+    final statColor = title == 'Kategori' ? _getCategoryColor(value) : color;
+
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: color.withValues(alpha:0.1),
+        color: statColor.withAlpha(10),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: color.withValues(alpha:0.2)),
+        border: Border.all(color: statColor.withAlpha(20)),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -1721,10 +1743,10 @@ class _ChildDashboardContentState extends State<_ChildDashboardContent> {
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: color.withValues(alpha:0.2),
+              color: statColor.withAlpha(20),
               shape: BoxShape.circle,
             ),
-            child: Icon(icon, size: 22, color: color),
+            child: Icon(icon, size: 22, color: statColor),
           ),
           const SizedBox(height: 8),
           Text(
@@ -1732,7 +1754,7 @@ class _ChildDashboardContentState extends State<_ChildDashboardContent> {
             style: TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.bold,
-              color: color,
+              color: statColor,
             ),
           ),
           Text(
@@ -1749,15 +1771,16 @@ class _ChildDashboardContentState extends State<_ChildDashboardContent> {
 
   String _getStatusText(int score, int maxScore) {
     final percentage = score / maxScore;
-    if (percentage <= 0.3) return 'Baik';
-    if (percentage <= 0.6) return 'Perhatian';
-    return 'Perlu Intervensi';
+    // Untuk kategori aspek individual gunakan 3 kategori yang sama
+    if (percentage <= 0.2) return 'Baik';          // ≤20%
+    if (percentage <= 0.4) return 'Perhatian';     // 21-40%
+    return 'Perlu Intervensi';                     // >40%
   }
 
   Color _getStatusColor(int score, int maxScore) {
     final percentage = score / maxScore;
-    if (percentage <= 0.3) return Colors.green;
-    if (percentage <= 0.6) return Colors.orange;
+    if (percentage <= 0.2) return Colors.green;
+    if (percentage <= 0.4) return Colors.orange;
     return Colors.red;
   }
 

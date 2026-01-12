@@ -391,78 +391,15 @@ class HifzScoringSystem {
   }
 
   // Fungsi untuk menghitung skor dari jawaban
-  static int calculateScore(List<Map<String, dynamic>> answers) {
-    int totalScore = 0;
-
-    for (final answerMap in answers) {
-      final answerList = answerMap['answers'] as List<String>;
-      for (final answer in answerList) {
-        // Normalisasi jawaban
-        final normalizedAnswer = answer.toLowerCase().trim();
-
-        // Skoring berdasarkan sistem 0-2
-        if (normalizedAnswer.contains('ya') ||
-            normalizedAnswer.contains('yakin') ||
-            normalizedAnswer.contains('mengerti') ||
-            normalizedAnswer.contains('mampu') ||
-            normalizedAnswer.contains('tidak ada masalah') ||
-            normalizedAnswer.contains('tahu') ||
-            normalizedAnswer.contains('tercukupi') ||
-            normalizedAnswer.contains('mandiri') ||
-            normalizedAnswer.contains('selalu') ||
-            normalizedAnswer.contains('ketetapan dari allah') ||
-            normalizedAnswer.contains('jalan allah') ||
-            normalizedAnswer.contains('memahami') ||
-            normalizedAnswer.contains('mengetahui') ||
-            normalizedAnswer.contains('bisa') ||
-            normalizedAnswer.contains('sering') ||
-            normalizedAnswer.contains('pernah') ||
-            normalizedAnswer.contains('baik') ||
-            normalizedAnswer.contains('cukup') ||
-            normalizedAnswer.contains('aman') ||
-            normalizedAnswer.contains('rutin')) {
-          totalScore += 0; // Kondisi baik
-        } else if (normalizedAnswer.contains('kadang') ||
-            normalizedAnswer.contains('ragu') ||
-            normalizedAnswer.contains('butuh bantuan') ||
-            normalizedAnswer.contains('perlu pendampingan') ||
-            normalizedAnswer.contains('hambatan ringan') ||
-            normalizedAnswer.contains('sebagian') ||
-            normalizedAnswer.contains('pernah') ||
-            normalizedAnswer.contains('kurang') ||
-            normalizedAnswer.contains('sedikit') ||
-            normalizedAnswer.contains('belum') ||
-            normalizedAnswer.contains('jarang') ||
-            normalizedAnswer.contains('tidak selalu') ||
-            normalizedAnswer.contains('tidak yakin') ||
-            normalizedAnswer.contains('tidak tahu')) {
-          totalScore += 1; // Risiko
-        } else if (normalizedAnswer.contains('tidak') ||
-            normalizedAnswer.contains('tidak mengerti') ||
-            normalizedAnswer.contains('tidak mampu') ||
-            normalizedAnswer.contains('belum') ||
-            normalizedAnswer.contains('masalah berat') ||
-            normalizedAnswer.contains('kesulitan') ||
-            normalizedAnswer.contains('tidak yakin') ||
-            normalizedAnswer.contains('tidak tahu') ||
-            normalizedAnswer.contains('sangat sulit') ||
-            normalizedAnswer.contains('sering sakit') ||
-            normalizedAnswer.contains('tidak pernah') ||
-            normalizedAnswer.contains('tidak bisa') ||
-            normalizedAnswer.contains('sulit') ||
-            normalizedAnswer.contains('perlu bantuan') ||
-            normalizedAnswer.contains('kekurangan') ||
-            normalizedAnswer.contains('masalah')) {
-          totalScore += 2; // Masalah signifikan
-        } else {
-          // Default untuk jawaban yang tidak dikenali
-          totalScore += 1;
-        }
-      }
-    }
-
-    return totalScore;
-  }
+  // Di HifzScoringSystem.dart
+  // static int calculateScore(List<Map<String, dynamic>> answers) {
+  //   debugPrint('❌ PERINGATAN: JANGAN GUNAKAN HifzScoringSystem.calculateScore()');
+  //   debugPrint('   Sistem scoring ini berbeda dengan ChildCubit');
+  //   debugPrint('   Gunakan data dari Firestore saja (hifz_xxx_score)');
+  //
+  //   // Selalu return 0 untuk memastikan tidak mengganggu data Firestore
+  //   return 0;
+  // }
 
   // Fungsi untuk mendapatkan deskripsi kategori
   static String getCategoryDescription(String hifzKey, String category) {

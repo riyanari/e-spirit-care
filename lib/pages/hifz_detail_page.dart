@@ -119,7 +119,8 @@ class HifzDetailPage extends StatelessWidget {
 
                           if (isSmallScreen) {
                             // Vertical layout for small screens
-                            return Column(
+                            return Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
                                 _buildStatItem('Skor', '$score/$maxScore', Icons.score_rounded, color),
                                 const SizedBox(height: 16),
@@ -412,7 +413,7 @@ class HifzDetailPage extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: color.withAlpha(25),
+              color: color.withAlpha(20),
               shape: BoxShape.circle,
             ),
             child: Icon(icon, color: color, size: 20),
@@ -421,8 +422,7 @@ class HifzDetailPage extends StatelessWidget {
           Text(
             value,
             style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
+              fontSize: 10,
               color: color,
             ),
             textAlign: TextAlign.center,
@@ -431,7 +431,7 @@ class HifzDetailPage extends StatelessWidget {
           Text(
             title,
             style: TextStyle(
-              fontSize: 12,
+              fontSize: 11,
               color: Colors.grey[600],
             ),
             textAlign: TextAlign.center,

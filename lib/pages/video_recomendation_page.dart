@@ -153,24 +153,62 @@ class _VideoRecommendationsPageState extends State<VideoRecommendationsPage>
     _fadeController.forward();
   }
 
+  // Di _VideoRecommendationsPageState, initState atau _initializeData:
   void _initializeData() {
-    hifzNafsScore = widget.child.hifzAnNafsScore;
-    hifzDiinScore = widget.child.hifzAdDiinScore;
-    hifzAqlScore = widget.child.hifzAlAqlScore;
-    hifzNaslScore = widget.child.hifzAnNaslScore;
-    hifzMalScore = widget.child.hifzAlMalScore;
+    // Panggil debug
+    widget.child.debugHifzScores();
 
-    hifzNafsCategory = widget.child.hifzAnNafsCategory;
-    hifzDiinCategory = widget.child.hifzAdDiinCategory;
-    hifzAqlCategory = widget.child.hifzAlAqlCategory;
-    hifzNaslCategory = widget.child.hifzAnNaslCategory;
-    hifzMalCategory = widget.child.hifzAlMalCategory;
+    // Gunakan data langsung dari Firestore untuk skor
+    hifzNafsScore = int.tryParse(widget.child.pertanyaan['hifz_an_nafs_score'] ?? '0') ?? 0;
+    hifzDiinScore = int.tryParse(widget.child.pertanyaan['hifz_ad_diin_score'] ?? '0') ?? 0;
+    hifzAqlScore = int.tryParse(widget.child.pertanyaan['hifz_al_aql_score'] ?? '0') ?? 0;
+    hifzNaslScore = int.tryParse(widget.child.pertanyaan['hifz_an_nasl_score'] ?? '0') ?? 0;
+    hifzMalScore = int.tryParse(widget.child.pertanyaan['hifz_al_mal_score'] ?? '0') ?? 0;
 
-    totalScore = widget.child.totalHifzScore;
-    overallCategory = widget.child.hifzOverallCategory;
+    // Untuk kategori, ambil dari Firestore
+    hifzNafsCategory = widget.child.pertanyaan['hifz_an_nafs_category'] ?? 'Belum dinilai';
+    hifzDiinCategory = widget.child.pertanyaan['hifz_ad_diin_category'] ?? 'Belum dinilai';
+    hifzAqlCategory = widget.child.pertanyaan['hifz_al_aql_category'] ?? 'Belum dinilai';
+    hifzNaslCategory = widget.child.pertanyaan['hifz_an_nasl_category'] ?? 'Belum dinilai';
+    hifzMalCategory = widget.child.pertanyaan['hifz_al_mal_category'] ?? 'Belum dinilai';
+
+    // **FIX: Hitung ulang total score dan kategori secara konsisten**
+    totalScore = hifzNafsScore + hifzDiinScore + hifzAqlScore + hifzNaslScore + hifzMalScore;
+
+    // **FIX: Gunakan scoring system yang sesuai dengan total maksimal 74 poin**
+    // Total maksimal = 74 poin, jadi:
+    // - 0-14 poin: Baik (skor rendah = baik)
+    // - 15-29 poin: Perhatian
+    // - 30+ poin: Perlu Intervensi
+    overallCategory = _calculateOverallCategoryFor74(totalScore);
+
+    // **DEBUG: Tampilkan perbedaan**
+    debugPrint('Total Score: $totalScore');
+    debugPrint('Kategori Firestore: ${widget.child.pertanyaan['hifz_overall_category']}');
+    debugPrint('Kategori dihitung: $overallCategory');
 
     recommendations = _generateVideoRecommendations();
     hasPrayerReminder = _checkPrayerReminder();
+  }
+
+// **PERBAIKAN: Sesuaikan dengan total maksimal 74 poin**
+  String _calculateOverallCategoryFor74(int totalScore) {
+    // Total maksimal = 74 poin
+    // Kategori berdasarkan skor (skor rendah = baik):
+    if (totalScore <= 14) return 'Baik';           // 0-14 poin (19% dari 74)
+    if (totalScore <= 29) return 'Perhatian';      // 15-29 poin (20-39% dari 74)
+    return 'Perlu Intervensi';                     // 30+ poin (40%+ dari 74)
+  }
+
+// **TAMBAHKAN METHOD INI**
+  String _calculateOverallCategory(int totalScore) {
+    // Total maksimal = 5 aspek × 20 poin = 100 poin
+    if (totalScore == 0) return 'Belum dinilai'; // Jika semua 0
+
+    // Sesuaikan dengan switch case yang Anda sebutkan
+    if (totalScore >= 80) return 'Baik';              // 80-100
+    if (totalScore >= 50) return 'Perhatian';         // 50-79
+    return 'Perlu Intervensi';                        // 1-49
   }
 
   List<VideoModel> _generateVideoRecommendations() {
@@ -1212,36 +1250,16 @@ class _VideoRecommendationsPageState extends State<VideoRecommendationsPage>
                 gradient: LinearGradient(
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
-                  colors: isHovered
-                      ? [
-                    color.withAlpha(40),
-                    color.withAlpha(25),
-                  ]
-                      : [
+                  colors: [
                     color.withAlpha(20),
                     color.withAlpha(10),
                   ],
                 ),
                 border: Border.all(
-                  color: isHovered
-                      ? color.withAlpha(60)
-                      : color.withAlpha(30),
-                  width: isHovered ? 2 : 1.5,
+                  color: color.withAlpha(30),
+                  width: 1.5,
                 ),
-                boxShadow: isHovered
-                    ? [
-                  BoxShadow(
-                    color: color.withAlpha(40),
-                    blurRadius: 12,
-                    offset: const Offset(0, 6),
-                  ),
-                  BoxShadow(
-                    color: color.withAlpha(20),
-                    blurRadius: 8,
-                    offset: const Offset(0, 4),
-                  ),
-                ]
-                    : [
+                boxShadow: [
                   BoxShadow(
                     color: color.withAlpha(20),
                     blurRadius: 8,
@@ -1261,19 +1279,9 @@ class _VideoRecommendationsPageState extends State<VideoRecommendationsPage>
                           duration: const Duration(milliseconds: 200),
                           padding: const EdgeInsets.all(8),
                           decoration: BoxDecoration(
-                            color: isHovered
-                                ? color.withAlpha(40)
-                                : color.withAlpha(30),
+                            color: color.withAlpha(30),
                             borderRadius: BorderRadius.circular(10),
-                            boxShadow: isHovered
-                                ? [
-                              BoxShadow(
-                                color: color.withAlpha(30),
-                                blurRadius: 6,
-                                offset: const Offset(0, 2),
-                              ),
-                            ]
-                                : [],
+                            boxShadow: [],
                           ),
                           child: Icon(
                             icon,
@@ -1588,6 +1596,7 @@ class _VideoRecommendationsPageState extends State<VideoRecommendationsPage>
                   children: [
                     // Stats Overview
                     Container(
+                      width: double.infinity,
                       padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
                         color: Colors.grey[50],
@@ -2082,15 +2091,16 @@ class _VideoRecommendationsPageState extends State<VideoRecommendationsPage>
 
   String _getStatusText(int score, int maxScore) {
     final percentage = score / maxScore;
-    if (percentage <= 0.3) return 'Baik';
-    if (percentage <= 0.6) return 'Perhatian';
-    return 'Perlu Intervensi';
+    // Untuk kategori aspek individual juga gunakan 3 kategori
+    if (percentage <= 0.2) return 'Baik';          // ≤20%
+    if (percentage <= 0.4) return 'Perhatian';     // 21-40%
+    return 'Perlu Intervensi';                     // >40%
   }
 
   Color _getStatusColor(int score, int maxScore) {
     final percentage = score / maxScore;
-    if (percentage <= 0.3) return Colors.green;
-    if (percentage <= 0.6) return Colors.orange;
+    if (percentage <= 0.2) return Colors.green;
+    if (percentage <= 0.4) return Colors.orange;
     return Colors.red;
   }
 
@@ -2283,10 +2293,6 @@ class _VideoRecommendationsPageState extends State<VideoRecommendationsPage>
     );
   }
 
-  Color _getCategoryColor(String category) {
-    return HifzScoringSystem.getCategoryColor(category);
-  }
-
   Color _getHifzColor(String hifzKey) {
     final colors = {
       'an_nafs': Colors.red,
@@ -2306,12 +2312,12 @@ class _VideoRecommendationsPageState extends State<VideoRecommendationsPage>
 
   String _getLevel(String category) {
     switch (category) {
-      case 'Tinggi':
-        return 'Lanjutan';
-      case 'Sedang':
+      case 'Baik':
+        return 'Optimal';
+      case 'Perhatian':
         return 'Menengah';
-      case 'Rendah':
-        return 'Dasar';
+      case 'Perlu Intervensi':
+        return 'Perlu Bantuan';
       default:
         return '-';
     }
@@ -2319,12 +2325,12 @@ class _VideoRecommendationsPageState extends State<VideoRecommendationsPage>
 
   String _getStatus(String category) {
     switch (category) {
-      case 'Tinggi':
+      case 'Baik':
         return 'Optimal';
-      case 'Sedang':
-        return 'Perlu Perhatian';
-      case 'Rendah':
-        return 'Butuh Bantuan';
+      case 'Perhatian':
+        return 'Perlu Pantau';
+      case 'Perlu Intervensi':
+        return 'Butuh Intervensi';
       default:
         return '-';
     }
@@ -2332,14 +2338,27 @@ class _VideoRecommendationsPageState extends State<VideoRecommendationsPage>
 
   String _getCategoryDescription(String category) {
     switch (category) {
-      case 'Tinggi':
-        return 'Perkembangan aspek HIFZ anak relatif baik. Pertahankan konsistensi dalam pendampingan! 🎉';
-      case 'Sedang':
-        return 'Ada beberapa area yang perlu ditingkatkan. Fokus pada aspek yang membutuhkan perhatian khusus. 💪';
-      case 'Rendah':
-        return 'Perlu pendampingan intensif pada aspek spiritual, jiwa, pola asuh, atau ekonomi. 🌱';
+      case 'Baik':
+        return 'Perkembangan aspek HIFZ anak relatif baik (skor ≤14). Pertahankan konsistensi dalam pendampingan! 🎉';
+      case 'Perhatian':
+        return 'Ada beberapa area yang perlu ditingkatkan (skor 15-29). Fokus pada aspek yang membutuhkan perhatian khusus. 💪';
+      case 'Perlu Intervensi':
+        return 'Perlu pendampingan intensif (skor ≥30). Identifikasi area yang memerlukan intervensi segera. 🌱';
       default:
         return 'Terus pantau perkembangan anak secara berkala.';
+    }
+  }
+
+  Color _getCategoryColor(String category) {
+    switch (category) {
+      case 'Baik':
+        return Colors.green;
+      case 'Perhatian':
+        return Colors.orange;
+      case 'Perlu Intervensi':
+        return Colors.red;
+      default:
+        return Colors.grey;
     }
   }
 
