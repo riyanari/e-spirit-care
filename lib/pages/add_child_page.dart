@@ -797,7 +797,7 @@ class _AddChildPageState extends State<AddChildPage> {
           const SizedBox(height: 16),
           _buildTextFieldWithIcon(
             passwordController,
-            'Password Anak',
+            'Password (No RM atau Nomor Rekam Medis)',
             Icons.lock_outline,
             obscureText: true,
           ),
